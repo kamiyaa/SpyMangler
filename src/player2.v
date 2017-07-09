@@ -6,7 +6,7 @@
 module player2(
     // input
     clock,
-    value_input,
+    user_input,
     finish_input,
     resetn,
     player1_value,
@@ -18,7 +18,7 @@ module player2(
 
     input clock;
     input finish_input;
-    input value_input;
+    input user_input;
     input resetn;
     input [19:0] player1_value;
 
@@ -33,7 +33,7 @@ module player2(
 
     input_module morse_decoder(
         .clock(clock),
-        .input_in(value_input),
+        .user_input(user_input),
         .resetn(resetn),
         .ld_dot(ld_dot),
         .ld_line(ld_line)

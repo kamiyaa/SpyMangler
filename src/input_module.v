@@ -4,7 +4,7 @@
 module input_module(
     // Inputs
     clock,
-    input_in,
+    user_input,
     resetn,
 
     // Outputs
@@ -12,12 +12,14 @@ module input_module(
     ld_line
     );
 
-    input clock;
-    input input_in;
-    input resetn;
+    input clock;      // clock
+    input user_input; // user input
+    input resetn;     // reset button
 
+    /* indicate whether a dot or line was detected */
     output reg ld_dot, ld_line;
 
+    /* registers to hold the current state and next state */
     reg [3:0] current_state, next_state;
 
     /* finite states */
@@ -31,37 +33,42 @@ module input_module(
     // Next state logic aka our state table
     always @(*) begin: state_table
         case (current_state)
-            /*                                  not pressed     pressed */
-            S_F1:       next_state = input_in ? S_F1    :       S_F2;
-            S_F2:       next_state = input_in ? S_DOT   :       S_F3;
-            S_F3:       next_state = input_in ? S_F1    :       S_F4;
-            S_F4:       next_state = input_in ? S_LINE  :       S_F2;
-            S_DOT:      next_state = input_in ? S_F1    :       S_F2;
-            S_LINE:     next_state = input_in ? S_F1    :       S_F2;
+            /*                                    not pressed   pressed */
+            S_F1:       next_state = user_input ? S_F1    :     S_F2;
+            S_F2:       next_state = user_input ? S_DOT   :     S_F3;
+            S_F3:       next_state = user_input ? S_F1    :     S_F4;
+            S_F4:       next_state = user_input ? S_LINE  :     S_F2;
+            S_DOT:      next_state = user_input ? S_F1    :     S_F2;
+            S_LINE:     next_state = user_input ? S_F1    :     S_F2;
             default:    next_state = S_F1;
         endcase
     end     // state_table
 
-    // Output logic aka all of our datapath control signals
     always @(*) begin: enable_signals
-        // By default make all our signals 0
-        ld_dot = 1'b0;
-        ld_line = 1'b0;
         case (current_state)
+            /* set ld_dot to 1 when we've detected a dot */
             S_DOT: begin
                 ld_dot = 1'b1;
             end
+            /* set ld_line to 1 when we've detected a line */
             S_LINE: begin
                 ld_line = 1'b1;
+            end
+            default: begin
+                /* By default make all our signals 0 */
+                ld_dot = 1'b0;
+                ld_line = 1'b0;
             end
         endcase
     end    // enable_signals
    
 
-    // current_state registers
+    /* current_state registers */
     always@(posedge clock) begin: state_FFs
+        /* if reset is pressed, current_state will become S_F1 */
         if (!resetn)
             current_state <= S_F1;
+        /* otherwise, current_state goes to next_state */
         else
             current_state <= next_state;
     end // state_FFS
