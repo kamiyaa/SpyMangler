@@ -1,0 +1,8 @@
+*.o
+*~
+*.jpg
+*.mp4
+src/*.png
+/src/ruiji
+/src/test*
+/debug
