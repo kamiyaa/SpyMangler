@@ -119,14 +119,6 @@ module main(
             input_mem <= { input_mem[1:0], 1'b1 };
     end
 
-	ram32x4 ram0(
-		.data(p2_out),
-		.address(),
-		.wren(SW[9]),
-		.clock(next_input),
-		.q(data_out)
-		);
-
     reg [4:0] p2_addr;
     wire p2_out;
 
