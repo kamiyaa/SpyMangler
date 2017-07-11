@@ -12,7 +12,7 @@ module test_player2(
     );
 
     input CLOCK_50;
-    input [2:0] KEY;
+    input [3:0] KEY;
     output [17:0] LEDR;
     output [7:0] LEDG;
 
@@ -29,8 +29,9 @@ module test_player2(
 
     player2 player2_0(
         .clock(clock),
-        .value_input(KEY[0]),
-        .finish_input(KEY[2]),
+        .user_input(KEY[0]),
+        .next_input(KEY[2]),
+        .done_input(KEY[3]),
         .resetn(KEY[1]),
         .player1_value(p1_value),
         .correct(LEDG[7]),
