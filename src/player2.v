@@ -5,10 +5,11 @@
 
 module player2(
     // input
-    clock,
-    user_input,
-    finish_input,
-    resetn,
+    clock,      // clock
+    user_input, // data in from user
+    next_input, // indicate next input
+    done_input, // indicate user is done with input
+    resetn,     // reset current input
     player1_value,
 
     // output
@@ -17,8 +18,9 @@ module player2(
     );
 
     input clock;
-    input finish_input;
     input user_input;
+    input next_input;
+    input done_input;
     input resetn;
     input [19:0] player1_value;
 
@@ -51,6 +53,6 @@ module player2(
             player2_value <= { player2_value, 4'b1110 };
     end
     // assign correct a value when player click finish
-    assign correct = finish_input ? 1'b0 : (player2_value == player1_value);
+    assign correct = done_input ? 1'b0 : (player2_value == player1_value);
     assign q = player2_value;
 endmodule
