@@ -1,8 +1,10 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
-`include "player2.v"
 `include "rate_divider.v"
+`include "hex_decoder.v"
+`include "player1.v"
+`include "player2.v"
 `include "tumbler_vga.v"
 `include "ram32x20.v"
 
@@ -45,6 +47,9 @@ module main(
     output  [9:0]   VGA_G;           //    VGA Green[9:0]
     output  [9:0]   VGA_B;           //    VGA Blue[9:0]
 
+    input           PS2_CLK;
+    input           PS2_DAT;
+
     input           CLOCK_50;
     input   [3:0]   KEY;
     input   [17:0]  SW;
@@ -53,24 +58,24 @@ module main(
     output  [7:0]   LEDG;
 	output  [6:0]   HEX0;
 
-    input           PS2_CLK;
-    input           PS2_DAT;
-
     /* value for getting 1 hz using CLOCK_50 */
-    wire [27:0] ONEHZ = 28'b0010111110101111000010000000;
+    wire [27:0] ONE_HZ = 28'b0010111110101111000010000000;
 
     /* input maps */
     wire user_input = KEY[0];
     wire next_input = KEY[1];
     wire done_input = KEY[2];
     wire resetn	    = KEY[3];
+    wire clock      = CLOCK_50;
+    wire ps2_clock  = PS2_CLK;
+    wire ps2_data   = PS2_DAT;
 
     /* make a 1Hz clock */
-    wire clock;
+    wire clock_1hz;
     rate_divider rate0(
-        .clock_in(CLOCK_50),
-        .clock_out(clock),
-        .rate(ONEHZ)
+        .clock_in(clock),
+        .clock_out(clock_1hz),
+        .rate(ONE_HZ)
         );
 
     /* finite states */
@@ -97,12 +102,12 @@ module main(
         // By default make all our signals 0
         case (current_state)
             S_P1TURN: begin
-                p1_clock <= clock;
+                p1_clock <= ps2_clock;
                 p2_clock <= 0;
             end
             S_P2TURN: begin
                 p1_clock <= 0;
-                p2_clock <= clock;
+                p2_clock <= clock_1hz;
             end
         endcase
     end
@@ -110,7 +115,7 @@ module main(
     /* visual on LEDG for user */
     reg [2:0] input_mem;
     assign LEDG[2:0] = input_mem;
-    always @(posedge clock) begin
+    always @(posedge clock_1hz) begin
         if (user_input)
             input_mem <= 0;
         else if (input_mem == 3'b111)
@@ -119,8 +124,16 @@ module main(
             input_mem <= { input_mem[1:0], 1'b1 };
     end
 
-    reg [4:0] p2_addr;
-    wire p2_out;
+    wire [3:0] p1_addr;
+
+    player1 player1_0(
+        .ps2_clock(ps2_clock),
+        .ps2_data(ps2_data),
+        .resetn(resetn),
+        .mem_addr(p1_addr)
+        );
+
+    reg [19:0] p1_value = 6'b101110;
 
     player2 player2_0(
         .clock(p2_clock),
@@ -128,21 +141,10 @@ module main(
         .next_input(next_input),
         .done_input(done_input),
         .resetn(resetn),
-        .player1_value(p1_value),
+        .p1_value(p1_value),
         .correct(LEDG[7]),
         .q(p2_out)
         );
-
-    always @(posedge clock) begin
-        if (!p2_addr)
-            p2_addr <= 4'b1111;
-        if (next_input) begin
-            if (p1_clock)
-                p1_addr <= p1_addr + 1'b1;
-            if (p2_clock)
-                p2_addr <= p2_addr + 1'b1;
-        end
-    end
 
     /* shows current state, for DEBUGGING */
     hex_decoder hex0(
@@ -151,11 +153,10 @@ module main(
         );
 
     /* current_state registers */
-    always@(posedge clock) begin: state_FFs
+    always@(posedge clock_1hz) begin: state_FFs
         if (!resetn)
             current_state <= S_START;
         else
             current_state <= next_state;
     end
 endmodule
-   

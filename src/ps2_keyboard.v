@@ -26,18 +26,19 @@ module ps2_keyboard(
     /* shift ps/2 data inputs into data register */
     always @(negedge ps2_clock) begin
         if (counter > 0 && counter < 9)
-            data <= { ps2_data, data };
+            data <= { ps2_data, data[15:1] };
         if (counter > 8)
             counter <= 4'b0;
-        counter <= counter + 1'b1;
+        else
+            counter <= counter + 1'b1;
     end
 
     /* loads data from data reg to data_out */
     always @(negedge counter) begin
-        case (upper_data)
-            8'b1111_0000: data_complete = 1'b1;
-            default: data_complete = 1'b0;
-        endcase
+        if (upper_data == 8'hf0)
+            data_complete = 1'b1;
+        else
+            data_complete = 1'b0;
         data_out = data_complete ? lower_data : 8'b0;
     end
 endmodule
