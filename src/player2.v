@@ -1,7 +1,7 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
-`include "input_module.v"
+`include "morse_decoder.v"
 
 module player2(
     // input
@@ -22,18 +22,18 @@ module player2(
     input next_input;
     input done_input;
     input resetn;
-    input [19:0] p1_value;
+    input [9:0] p1_value;
 
     output correct;
-    output [19:0] q;
+    output [9:0] q;
 
-    reg [19:0] p2_value;
+    reg [9:0] p2_value;
     reg [3:0] current_state, next_state;
 
     wire ld_dot, ld_line;
 
     /* module to take in input and convert to morse code */
-    input_module morse_decoder(
+    morse_decoder morse0(
         .clock(clock),
         .user_input(user_input),
         .resetn(resetn),
@@ -49,10 +49,10 @@ module player2(
 		      p2_value <= 0;
         // concatentate dot binary to player2's input value
         if (ld_dot)
-            p2_value <= { p2_value, 2'b10 };
+            p2_value <= { p2_value, 2'b01 };
         // concatentate line binary to player2's input value
         if (ld_line)
-            p2_value <= { p2_value, 4'b1110 };
+            p2_value <= { p2_value, 2'b11 };
     end
     // assign correct a value when player click finish
     assign correct = done_input ? 1'b0 : (p2_value == p1_value);

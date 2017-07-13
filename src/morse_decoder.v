@@ -1,7 +1,7 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
-module input_module(
+module morse_decoder(
     // Inputs
     clock,
     user_input,

@@ -1,51 +1,45 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
-`include "ram32x8.v"
-`include "ps2_keyboard.v"
+`include "morse_decoder.v"
 
 module player1(
     /* input */
-    ps2_clock,  // clock from ps2
-    ps2_data,   // data from ps2
-    resetn,     // reset current input
-
-    /* output */
-    mem_addr
+    clock,          // clock from ps2
+    user_input,     // data from ps2
+    next_input,
+    done_input,
+    resetn          // reset current input
     );
 
-    input       ps2_clock;
-    input       ps2_data;
+    input       clock;
+    input       user_input;
+    input       next_input;
+    input       done_input;
     input       resetn;
 
-    output reg [3:0] mem_addr;
-
-    wire [7:0]  data_out;
-    wire        data_complete;
+    reg [9:0] p1_value;
 
     /* module to take in input and convert to morse code */
-    ps2_keyboard keyboard_input(
-        .ps2_clock(p2_clock),
-        .ps2_data(ps2_data),
-        .data_out(data_out),
-        .data_complete(data_complete)
+    morse_decoder morse0(
+        .clock(clock),
+        .user_input(user_input),
+        .resetn(resetn),
+        .ld_dot(ld_dot),
+        .ld_line(ld_line)
         );
 
-    reg [3:0] mem_addr;
-    wire [7:0] null;
-
-    ram32x8 ram_storage(
-        .address(mem_addr),
-        .clock(data_complete),
-        .data(data_out),
-        .wren(data_complete),
-        .q(null)
-        );
-
-    always @(negedge data_complete) begin
-        if (!resetn)
-            mem_addr <= 0;
-        else
-            mem_addr <= mem_addr + 1'b1;
+    /* loop to concatentate morse code coming in with
+     * existing morse code */
+    always @(posedge clock) begin
+        // reset player2 value
+	     if (!resetn)
+		      p1_value <= 0;
+        // concatentate dot binary to player2's input value
+        if (ld_dot)
+            p1_value <= { p1_value, 2'b01 };
+        // concatentate line binary to player2's input value
+        if (ld_line)
+            p1_value <= { p1_value, 2'b11 };
     end
 endmodule
