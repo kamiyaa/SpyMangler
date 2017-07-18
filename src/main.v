@@ -3,7 +3,6 @@
 
 `include "rate_divider.v"
 `include "hex_decoder.v"
-`include "player1.v"
 `include "player2.v"
 `include "tumbler_vga.v"
 `include "ram32x10.v"
@@ -15,10 +14,6 @@ module main(
     /* inputs */
     KEY,
     SW,
-
-    /* PS/2 inputs */
-    PS2_CLK,
-    PS2_DAT,
 
     /* board outputs */
     LEDR,
@@ -47,48 +42,34 @@ module main(
     output  [9:0]   VGA_G;           //    VGA Green[9:0]
     output  [9:0]   VGA_B;           //    VGA Blue[9:0]
 
-    input           PS2_CLK;
-    input           PS2_DAT;
-
+    /* inputs */
     input           CLOCK_50;
     input   [3:0]   KEY;
     input   [17:0]  SW;
 
-    output  [17:0]  LEDR;
+    output  [9:0]   LEDR;
     output  [7:0]   LEDG;
-	output  [6:0]   HEX0;
+    output  [6:0]   HEX0;
 
-    /* value for getting 1 hz using CLOCK_50 */
+
+    /* Constants */
     wire [27:0] ONE_HZ = 28'b0010111110101111000010000000;
 
     /* input maps */
     wire user_input = KEY[0];
     wire next_input = KEY[1];
     wire done_input = KEY[2];
-    wire resetn	  = KEY[3];
+    wire resetn     = KEY[3];
     wire clock      = CLOCK_50;
-    wire ps2_clock  = PS2_CLK;
-    wire ps2_data   = PS2_DAT;
 
-    /* make a 1Hz clock */
+
+    /* 1Hz clock using a rate divider */
     wire clock_1hz;
     rate_divider rate0(
         .clock_in(clock),
         .clock_out(clock_1hz),
         .rate(ONE_HZ)
         );
-
-	/* visual on LEDG for user */
-    reg [2:0] input_mem;
-    assign LEDG[2:0] = input_mem;
-    always @(posedge clock_1hz) begin
-        if (user_input)
-            input_mem <= 0;
-        else if (input_mem == 3'b111)
-            input_mem <= 1'b1;
-        else
-            input_mem <= { input_mem[1:0], 1'b1 };
-    end
 
     /* finite states */
     localparam  S_START     = 5'd0,
@@ -108,52 +89,87 @@ module main(
         endcase
     end
 
-    reg p1_clock, p2_clock;
-	 reg write;
-    reg [3:0] addr;
-	 wire [9:0] p1_value;
-	 wire [3:0] p2_addr;
+    /* shows current state, for DEBUGGING */
+    hex_decoder hex0(
+        .hex_digit(current_state),
+        .segments(HEX0)
+        );
+
+    /* morse code visual for user on LEDG */
+    reg [2:0] input_mem;
+    assign LEDG[2:0] = input_mem;
+    always @(posedge clock_1hz) begin
+        /* no user input */
+        if (user_input)
+            input_mem <= 0;
+        /* maxed morse code */
+        else if (input_mem == 3'b111)
+            input_mem <= 1'b1;
+        else
+            input_mem <= { input_mem[1:0], 1'b1 };
+    end
+
+    /* data control */
+    reg             p1_clock;   // clock for player 1
+    reg             p2_clock;   // clock for player 2
+    reg             rwen;       // 1 for write, 0 for read from ram
+    reg             ram_clock;
+    reg     [3:0]   ram_addr;   // current address pointer of ram for game
+
     /* datapath control */
     always @(*) begin: enable_signals
         // By default make all our signals 0
         case (current_state)
             S_P1TURN: begin
                 p1_clock <= clock_1hz;
-					 write <= 1;
+                ram_clock <= ~next_input;
+                rwen <= 1;
                 p2_clock <= 0;
             end
             S_P2TURN: begin
                 p1_clock <= 0;
-					 write <= 0;
+                rwen <= 0;
+                ram_clock <= ~done_input;
                 p2_clock <= clock_1hz;
             end
         endcase
     end
-	 
-	 always @(posedge next_input) begin
-		if (current_state == S_P1TURN || current_state == S_P2TURN)
-			addr <= addr + 1'b1;
+
+    /* current memory address pointer of ram for player1 and player 2 */
+    reg [3:0] p1_addr;
+    reg [3:0] p2_addr;
+
+    /* control player1 and player2's memory pointer position */
+    /* control current memory address pointer of game */
+    always @(posedge ram_clock) begin
+        if (current_state == S_P1TURN)
+            p1_addr <= p1_addr + 1;
+            ram_addr <= p1_addr;
+        if (current_state == S_P2TURN)
+            p2_addr <= p2_addr + 1;
+            ram_addr <= p2_addr;
     end
+
+    wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
+    wire    [9:0]   p1_value_out;   // value out from ram
+    wire    [9:0]   p2_value;
 
     player1 player1_0(
         .clock(p1_clock),
-		  .user_input(user_input),
-		  .next_input(next_input),
-		  .done_input(done_input),
+        .user_input(user_input),
+        .next_input(next_input),
+        .done_input(done_input),
         .resetn(resetn),
+        .q(p1_value)
         );
-		  
-	assign LEDR = p1_value;
-	 
-	wire [9:0] p1_value_out;
-	 
-	ram32x10 ram_storage(
-		.address(addr),
-      .clock(~next_input),
-      .data(p1_value),
-      .wren(write),
-      .q(p1_value_out)
-      );
+
+    ram32x10 ram0(
+        .address(ram_addr),
+        .clock(ram_clock),
+        .data(p1_value),
+        .wren(rwen),
+        .q(p1_value_out)
+        );
 
     player2 player2_0(
         .clock(p2_clock),
@@ -162,13 +178,10 @@ module main(
         .done_input(done_input),
         .resetn(resetn),
         .p1_value(p1_value_out),
-        .correct(LEDG[7]),
-        );
 
-    /* shows current state, for DEBUGGING */
-    hex_decoder hex0(
-        .hex_digit(current_state),
-        .segments(HEX0)
+        .correct(LEDR[2]),
+        .complete(LEDR[1]),
+        .q(p2_value)
         );
 
     /* current_state registers */
