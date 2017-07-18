@@ -54,6 +54,7 @@ module main(
 
     /* Constants */
     wire [27:0] ONE_HZ = 28'b0010111110101111000010000000;
+    wire [27:0] HUNDRED_HZ = 19'b1111010000100100000;
 
     /* input maps */
     wire user_input = KEY[0];
@@ -69,6 +70,12 @@ module main(
         .clock_in(clock),
         .clock_out(clock_1hz),
         .rate(ONE_HZ)
+        );
+	wire clock_100hz;
+	rate_divider rate1(
+        .clock_in(clock),
+        .clock_out(clock_100hz),
+        .rate(HUNDRED_HZ)
         );
 
     /* finite states */
@@ -120,6 +127,12 @@ module main(
     always @(*) begin: enable_signals
         // By default make all our signals 0
         case (current_state)
+            S_START: begin
+                p1_clock <= 0;
+                p2_clock <= 0;
+                ram_clock <= 0;
+                rwen <= 0;
+            end
             S_P1TURN: begin
                 p1_clock <= clock_1hz;
                 ram_clock <= ~next_input;
@@ -142,6 +155,10 @@ module main(
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
+        if (current_state == S_START) begin
+            p1_addr <= 0;
+            p2_addr <= 0;
+        end
         if (current_state == S_P1TURN)
             p1_addr <= p1_addr + 1;
             ram_addr <= p1_addr;
