@@ -1,62 +1,31 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
-`include "rate_divider.v"
-`include "hex_decoder.v"
-`include "player2.v"
-`include "tumbler_vga.v"
-`include "ram32x10.v"
-`include "translator.v"
+`include "../src/rate_divider.v"
+`include "../src/hex_decoder.v"
+`include "../src/player2.v"
+`include "../src/ram32x10.v"
 
-module main(
-    /* clock input */
+module test_ram_timing(
     CLOCK_50,
-
-    /* inputs */
     KEY,
-    SW,
-
-    /* board outputs */
     LEDR,
     LEDG,
     HEX0,
     HEX2,
-    HEX3,
+    HEX3
 
-    /* VGA outputs */
-    VGA_CLK,       //    VGA Clock
-    VGA_HS,        //    VGA H_SYNC
-    VGA_VS,        //    VGA V_SYNC
-    VGA_BLANK_N,   //    VGA BLANK
-    VGA_SYNC_N,    //    VGA SYNC
-    VGA_R,         //    VGA Red[9:0]
-    VGA_G,         //    VGA Green[9:0]
-    VGA_B          //    VGA Blue[9:0]
     );
 
-    // Declare your inputs and outputs here
-    // Do not change the following outputs
-    output          VGA_CLK;         //    VGA Clock
-    output          VGA_HS;          //    VGA H_SYNC
-    output          VGA_VS;          //    VGA V_SYNC
-    output          VGA_BLANK_N;     //    VGA BLANK
-    output          VGA_SYNC_N;      //    VGA SYNC
-    output  [9:0]   VGA_R;           //    VGA Red[9:0]
-    output  [9:0]   VGA_G;           //    VGA Green[9:0]
-    output  [9:0]   VGA_B;           //    VGA Blue[9:0]
-
-    /* inputs */
-    input           CLOCK_50;
-    input   [3:0]   KEY;
-    input   [17:0]  SW;
-
-    output  [9:0]   LEDR;
-    output  [7:0]   LEDG;
-    output  [6:0]   HEX0, HEX2, HEX3;
-
+    input CLOCK_50;
+    input [3:0] KEY;
+    output [17:0] LEDR;
+    output [6:0] LEDG;
+    output [6:0] HEX0, HEX2, HEX3;
 
     /* Constants */
     wire [27:0] ONE_HZ = 28'b0010111110101111000010000000;
+
 
     /* input maps */
     wire user_input = KEY[0];
@@ -119,8 +88,8 @@ module main(
     reg     [3:0]   ram_addr;   // current address pointer of ram for game
 
 	 /* current memory address pointer of ram for player1 and player 2 */
-    reg [3:0] p1_addr;
-    reg [3:0] p2_addr;
+    reg     [3:0]   p1_addr;
+    reg     [3:0]   p2_addr;
 	 
     /* datapath control */
     always @(*) begin: enable_signals
@@ -151,7 +120,6 @@ module main(
             end
         endcase
     end
-
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
@@ -201,19 +169,16 @@ module main(
         .q(p1_value_out)
         );
 
-    wire p2_correct;
-    player2 player2_0(
-        .clock(p2_clock),
-        .user_input(user_input),
-        .next_input(next_input),
-        .done_input(done_input),
-        .resetn(resetn),
-        .p1_value(p1_value_out),
+    reg [9:0] ledr_value;
 
-        .correct(p2_correct),
-        .complete(LEDR[1]),
-        .q(p2_value)
-        );
+    always @(posedge ram_clock) begin
+        if (current_state == S_P1TURN)
+            ledr_value <= p1_value;
+        if (current_state == S_P2TURN)
+            ledr_value <= p1_value_out;
+    end
+
+    assign LEDR = ledr_value;
 
     /* current_state registers */
     always@(posedge clock_1hz) begin: state_FFs
@@ -222,41 +187,4 @@ module main(
         else
             current_state <= next_state;
     end
-
-    wire [7:0] x,y;
-    wire [2:0] colour;
-    wire draw_full_box;
-	 
-	 assign LEDR[2] = p2_correct;
-	 assign LEDR[3] = p2_signal;
-
-    translator trans0(
-        .correct(p2_correct),     // 1bit, 1 if user input matches, 0 otherwise
-        .signal(p2_signal),      // signal to refresh/redraw... Automatically moves to next
-        .columns(p1_addr),     // 6bit, binary of number of columns in code
-        .selection(p2_value),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
-        .X(x),
-        .Y(y),
-        .colour(colour),
-        .draw_full(draw_full_box)
-        );
-
-    tumbler_vga tummy0(
-		.clock(CLOCK_50),
-		.colour_in(3'b111),
-		.draw_full(draw_full_box),
-		.draw(KEY[0]),
-		.x_in(x),
-		.y_in(y),
-		.resetn(~game_over),
-		.VGA_CLK(VGA_CLK),        //	VGA Clock
-		.VGA_HS(VGA_HS),            //	VGA H_SYNC
-		.VGA_VS(VGA_VS),            //	VGA V_SYNC
-		.VGA_BLANK_N(VGA_BLANK_N),  //	VGA BLANK
-		.VGA_SYNC_N(VGA_SYNC_N),    //	VGA SYNC
-		.VGA_R(VGA_R),              //	VGA Red[9:0]
-		.VGA_G(VGA_G),              //	VGA Green[9:0]
-		.VGA_B(VGA_B)  
-	);
-    
 endmodule
