@@ -6,6 +6,7 @@
 `include "player2.v"
 `include "tumbler_vga.v"
 `include "ram32x10.v"
+`include "translator.v"
 
 module main(
     /* clock input */
@@ -19,6 +20,8 @@ module main(
     LEDR,
     LEDG,
     HEX0,
+	 HEX2,
+	 HEX3,
 
     /* VGA outputs */
     VGA_CLK,       //    VGA Clock
@@ -49,7 +52,7 @@ module main(
 
     output  [9:0]   LEDR;
     output  [7:0]   LEDG;
-    output  [6:0]   HEX0;
+    output  [6:0]   HEX0, HEX2, HEX3;
 
 
     /* Constants */
@@ -63,7 +66,6 @@ module main(
     wire resetn     = KEY[3];
     wire clock      = CLOCK_50;
 
-
     /* 1Hz clock using a rate divider */
     wire clock_1hz;
     rate_divider rate0(
@@ -73,10 +75,10 @@ module main(
         );
 	wire clock_100hz;
 	rate_divider rate1(
-        .clock_in(clock),
-        .clock_out(clock_100hz),
-        .rate(HUNDRED_HZ)
-        );
+			.clock_in(clock),
+			.clock_out(clock_100hz),
+			.rate(HUNDRED_HZ)
+			);
 
     /* finite states */
     localparam  S_START     = 5'd0,
@@ -101,6 +103,7 @@ module main(
         .hex_digit(current_state),
         .segments(HEX0)
         );
+		  
 
     /* morse code visual for user on LEDG */
     reg [2:0] input_mem;
@@ -123,6 +126,10 @@ module main(
     reg             ram_clock;
     reg     [3:0]   ram_addr;   // current address pointer of ram for game
 
+	 /* current memory address pointer of ram for player1 and player 2 */
+    reg [3:0] p1_addr;
+    reg [3:0] p2_addr;
+	 
     /* datapath control */
     always @(*) begin: enable_signals
         // By default make all our signals 0
@@ -142,23 +149,20 @@ module main(
             S_P2TURN: begin
                 p1_clock <= 0;
                 rwen <= 0;
-                ram_clock <= ~done_input;
+                ram_clock <= ~next_input;
                 p2_clock <= clock_1hz;
             end
         endcase
     end
 
-    /* current memory address pointer of ram for player1 and player 2 */
-    reg [3:0] p1_addr;
-    reg [3:0] p2_addr;
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
-        if (current_state == S_START) begin
-            p1_addr <= 0;
-            p2_addr <= 0;
-        end
+		  if (current_state == S_START) begin
+				p1_addr <= 0;
+				p2_addr <= 0;
+		  end
         if (current_state == S_P1TURN)
             p1_addr <= p1_addr + 1;
             ram_addr <= p1_addr;
@@ -166,10 +170,22 @@ module main(
             p2_addr <= p2_addr + 1;
             ram_addr <= p2_addr;
     end
+	 
+	hex_decoder hex2(
+        .hex_digit(p1_addr),
+        .segments(HEX2)
+        );
+	hex_decoder hex3(
+        .hex_digit(p2_addr),
+        .segments(HEX3)
+        );
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [9:0]   p2_value;
+    wire    [1:0]   p2_value;
+
+    wire p2_signal = (current_state == S_P2TURN && ~user_input);
+    wire game_over = (current_state == S_RESULT);
 
     player1 player1_0(
         .clock(p1_clock),
@@ -188,6 +204,7 @@ module main(
         .q(p1_value_out)
         );
 
+    wire p2_correct;
     player2 player2_0(
         .clock(p2_clock),
         .user_input(user_input),
@@ -196,7 +213,7 @@ module main(
         .resetn(resetn),
         .p1_value(p1_value_out),
 
-        .correct(LEDR[2]),
+        .correct(p2_correct),
         .complete(LEDR[1]),
         .q(p2_value)
         );
@@ -208,4 +225,41 @@ module main(
         else
             current_state <= next_state;
     end
+
+    wire [7:0] x,y;
+    wire [2:0] colour;
+    wire draw_full_box;
+	 
+	 assign LEDR[2] = p2_correct;
+	 assign LEDR[3] = p2_signal;
+
+    translator trans0(
+        .correct(p2_correct),     // 1bit, 1 if user input matches, 0 otherwise
+        .signal(p2_signal),      // signal to refresh/redraw... Automatically moves to next
+        .columns(p1_addr),     // 6bit, binary of number of columns in code
+        .selection(p2_value),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
+        .X(x),
+        .Y(y),
+        .colour(colour),
+        .draw_full(draw_full_box)
+        );
+
+    tumbler_vga tummy0(
+		.clock(CLOCK_50),
+		.colour_in(3'b111),
+		.draw_full(draw_full_box),
+		.draw(KEY[0]),
+		.x_in(x),
+		.y_in(y),
+		.resetn(~game_over),
+		.VGA_CLK(VGA_CLK),        //	VGA Clock
+		.VGA_HS(VGA_HS),            //	VGA H_SYNC
+		.VGA_VS(VGA_VS),            //	VGA V_SYNC
+		.VGA_BLANK_N(VGA_BLANK_N),  //	VGA BLANK
+		.VGA_SYNC_N(VGA_SYNC_N),    //	VGA SYNC
+		.VGA_R(VGA_R),              //	VGA Red[9:0]
+		.VGA_G(VGA_G),              //	VGA Green[9:0]
+		.VGA_B(VGA_B)  
+	);
+    
 endmodule
