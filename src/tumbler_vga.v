@@ -46,7 +46,7 @@ module tumbler_vga
 	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
 	
 	// Create the colour, x, y and writeEn wires that are inputs to the controller.
-	wire [2:0] colour;
+	wire [2:0] colour2;
 	wire [7:0] x;
 	wire [6:0] y;
 	wire writeEn;
@@ -56,7 +56,7 @@ module tumbler_vga
 	vga_adapter VGA(
 			.resetn(resetn),
 			.clock(clock),
-			.colour(colour),
+			.colour(colour2),
 			.x(x),
 			.y(y),
 			.plot(writeEn),
@@ -93,7 +93,7 @@ module tumbler_vga
 		 .reset(resetn), 
 		 .x(x),
 		 .y(y),
-		 .c(colour),
+		 .c(colour2),
 		 .print(writeEn));
 
     endmodule
