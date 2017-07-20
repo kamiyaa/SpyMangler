@@ -86,7 +86,6 @@ module test_ram_timing(
     reg             rwen;       // 1 for write, 0 for read from ram
     reg             ram_clock;
     reg     [3:0]   ram_addr;   // current address pointer of ram for game
-
 	 /* current memory address pointer of ram for player1 and player 2 */
     reg     [3:0]   p1_addr;
     reg     [3:0]   p2_addr;
@@ -147,7 +146,6 @@ module test_ram_timing(
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [1:0]   p2_value;
 
     wire p2_signal = (current_state == S_P2TURN && ~user_input);
     wire game_over = (current_state == S_RESULT);
@@ -171,7 +169,7 @@ module test_ram_timing(
 
     reg [9:0] ledr_value;
 
-    always @(posedge ram_clock) begin
+    always @(*) begin
         if (current_state == S_P1TURN)
             ledr_value <= p1_value;
         if (current_state == S_P2TURN)
