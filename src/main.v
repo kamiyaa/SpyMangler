@@ -57,7 +57,7 @@ module main(
 
 
     /* Constants */
-    wire [27:0] ONE_HZ = 28'b0010111110101111000010000000;
+    localparam ONE_HZ = 28'b0010111110101111000010000000;
 
     /* input maps */
     wire user_input = KEY[0];
@@ -133,19 +133,19 @@ module main(
     reg [3:0]   ram_addr;   // current address pointer of ram for the game
 
     /* visual for memory address of player1 and player2 */
-	hex_decoder hex2(
+    hex_decoder hex2(
         .hex_digit(p1_addr),
         .segments(HEX2)
         );
-	hex_decoder hex3(
+    hex_decoder hex3(
         .hex_digit(p2_addr),
         .segments(HEX3)
         );
-    	hex_decoder hex4(
+    hex_decoder hex4(
         .hex_digit(ram_addr),
         .segments(HEX4)
         );
-	 
+ 
     /* datapath control */
     always @(*) begin: enable_signals
         case (current_state)
@@ -235,9 +235,9 @@ module main(
     wire [7:0] x,y;
     wire [2:0] colour;
     wire draw_full_box;
-	 
-	 assign LEDR[2] = p2_correct;
-	 assign LEDR[3] = p2_signal;
+
+    assign LEDR[2] = p2_correct;
+    assign LEDR[3] = p2_signal;
 
     translator trans0(
         .correct(p2_correct),     // 1bit, 1 if user input matches, 0 otherwise
@@ -251,22 +251,22 @@ module main(
         );
 
     tumbler_vga tummy0(
-		.clock(CLOCK_50),
-		.colour_in(3'b111),
-		.draw_full(draw_full_box),
-		.draw(KEY[0]),
-		.x_in(x),
-		.y_in(y),
-		.resetn(~game_over),
-		.VGA_CLK(VGA_CLK),        //	VGA Clock
-		.VGA_HS(VGA_HS),            //	VGA H_SYNC
-		.VGA_VS(VGA_VS),            //	VGA V_SYNC
-		.VGA_BLANK_N(VGA_BLANK_N),  //	VGA BLANK
-		.VGA_SYNC_N(VGA_SYNC_N),    //	VGA SYNC
-		.VGA_R(VGA_R),              //	VGA Red[9:0]
-		.VGA_G(VGA_G),              //	VGA Green[9:0]
-		.VGA_B(VGA_B)  
-	);
+        .clock(CLOCK_50),
+        .colour_in(3'b111),
+        .draw_full(draw_full_box),
+        .draw(KEY[0]),
+        .x_in(x),
+        .y_in(y),
+        .resetn(~game_over),
+        .VGA_CLK(VGA_CLK),        //____VGA Clock
+        .VGA_HS(VGA_HS),            //____VGA H_SYNC
+        .VGA_VS(VGA_VS),            //____VGA V_SYNC
+        .VGA_BLANK_N(VGA_BLANK_N),  //____VGA BLANK
+        .VGA_SYNC_N(VGA_SYNC_N),    //____VGA SYNC
+        .VGA_R(VGA_R),              //____VGA Red[9:0]
+        .VGA_G(VGA_G),              //____VGA Green[9:0]
+        .VGA_B(VGA_B)  
+        );
     
 endmodule
 
