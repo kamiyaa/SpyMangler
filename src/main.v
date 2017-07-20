@@ -74,6 +74,9 @@ module main(
         .rate(ONE_HZ)
         );
 
+    /* registers to hold the current state and next state */
+    reg [3:0] current_state, next_state;
+
     /* finite states */
     localparam  S_START     = 4'd0,
                 S_P1TURN    = 4'd1,
@@ -81,7 +84,6 @@ module main(
                 S_RESULT    = 4'd3 ;
 
     /* finite state machine logic */
-    reg [3:0] current_state, next_state;
     always @(*) begin: state_table
         case (current_state)
             /*                                    not pressed   pressed */
@@ -104,10 +106,10 @@ module main(
     always @(posedge clock_1hz) begin
         /* no user input */
         if (user_input)
-            input_mem <= 0;
+            input_mem <= 3'b0;
         /* maxed morse code */
         else if (input_mem == 3'b111)
-            input_mem <= 1'b1;
+            input_mem <= 3'b1;
         else
             input_mem <= { input_mem[1:0], 1'b1 };
     end
@@ -121,9 +123,10 @@ module main(
     /* p1_clock and p2_clock are only active during their respective
      * machine states
      */
-    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 0;
-    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 0;
-    assign rwen     = (current_state == S_P1TURN) ? 1 : 0;
+    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 1'b0;
+    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 1'b0;
+    /* enable write to ram only during player1's turn */
+    assign rwen     = (current_state == S_P1TURN) ? 1'b1 : 1'b0;
 
     reg [3:0]   p1_addr;    // current memory address player1 is writing to
     reg [3:0]   p2_addr;    // current memory address player2 is reading from
@@ -147,7 +150,7 @@ module main(
     always @(*) begin: enable_signals
         case (current_state)
             S_START: begin
-                ram_clock <= 1;
+                ram_clock <= 1'b1;
             end
             S_P1TURN: begin
                 ram_clock <= ~next_input;
@@ -156,26 +159,25 @@ module main(
                 ram_clock <= ~next_input;
             end
             default: begin
-                ram_clock <= 0;
+                ram_clock <= 1'b0;
             end
         endcase
     end
-
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
         if (current_state == S_START) begin
-            p1_addr <= 0;
-            p2_addr <= 0;
-            ram_addr <= 0;
+            p1_addr <= 1'b0;
+            p2_addr <= 1'b0;
+            ram_addr <= 1'b0;
         end
         if (current_state == S_P1TURN)
             ram_addr <= p1_addr;
-            p1_addr <= p1_addr + 1;
+            p1_addr <= p1_addr + 1'b1;
         if (current_state == S_P2TURN)
             ram_addr <= p2_addr;
-            p2_addr <= p2_addr + 1;
+            p2_addr <= p2_addr + 1'b1;
     end
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
