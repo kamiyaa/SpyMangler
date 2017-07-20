@@ -141,7 +141,7 @@ module main(
         .hex_digit(p2_addr),
         .segments(HEX3)
         );
-    hex_decoder hex4(
+    	hex_decoder hex4(
         .hex_digit(ram_addr),
         .segments(HEX4)
         );
