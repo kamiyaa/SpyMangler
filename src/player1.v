@@ -46,7 +46,7 @@ module player1(
      * existing morse code */
     always @(posedge clock) begin
         // reset player2 value
-	     if (!resetn)
+	if (!resetn)
             p1_value <= 10'b0;
         // concatentate dot binary to player2's input value
         if (ld_dot)
