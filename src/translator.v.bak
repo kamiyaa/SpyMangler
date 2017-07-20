@@ -1,24 +1,21 @@
-module translator(correct, signal, columns, selection, X, Y, colour, draw_full, reset);
-	input correct, signal, reset;
+module translator(correct, signal, columns, selection, X, Y, colour, draw_full);
+	input correct, signal;
 	input [5:0] columns;
 	input [1:0] selection;
+
 	output reg [7:0] X,Y;
 	output reg [2:0] colour;
 	output reg draw_full;
 
 	reg [4:0] row, column;
-	
+
 	always @(*) begin
-		X <= (column*10)+20;
-		Y <= (row*4)+30;
+		X <= column*20;
+		Y <= row*4;
 	end
 
-	always @(posedge signal, negedge reset) begin
-		if (reset == 1'b0) begin 
-			column <= 0;
-			row <= 0;
-		end
-		else if (correct && row == 5'b00100) begin
+	always @(posedge signal) begin
+		if (correct && row == 5'b00100) begin
 			row <= 5'b0;
 			column <= column + 1'b1;
 		end
