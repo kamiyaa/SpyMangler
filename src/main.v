@@ -19,22 +19,23 @@ module main(
     /* board outputs */
     LEDR,
     LEDG,
+
     HEX0,
     HEX2,
     HEX3,
+    HEX4,
 
     /* VGA outputs */
-    VGA_CLK,       //    VGA Clock
-    VGA_HS,        //    VGA H_SYNC
-    VGA_VS,        //    VGA V_SYNC
-    VGA_BLANK_N,   //    VGA BLANK
-    VGA_SYNC_N,    //    VGA SYNC
-    VGA_R,         //    VGA Red[9:0]
-    VGA_G,         //    VGA Green[9:0]
-    VGA_B          //    VGA Blue[9:0]
+    VGA_CLK,        //    VGA Clock
+    VGA_HS,         //    VGA H_SYNC
+    VGA_VS,         //    VGA V_SYNC
+    VGA_BLANK_N,    //    VGA BLANK
+    VGA_SYNC_N,     //    VGA SYNC
+    VGA_R,          //    VGA Red[9:0]
+    VGA_G,          //    VGA Green[9:0]
+    VGA_B           //    VGA Blue[9:0]
     );
 
-    // Declare your inputs and outputs here
     // Do not change the following outputs
     output          VGA_CLK;         //    VGA Clock
     output          VGA_HS;          //    VGA H_SYNC
@@ -49,10 +50,10 @@ module main(
     input           CLOCK_50;
     input   [3:0]   KEY;
     input   [17:0]  SW;
-
+    /* ouputs */
     output  [9:0]   LEDR;
     output  [7:0]   LEDG;
-    output  [6:0]   HEX0, HEX2, HEX3;
+    output  [6:0]   HEX0, HEX2, HEX3, HEX4;
 
 
     /* Constants */
@@ -74,10 +75,10 @@ module main(
         );
 
     /* finite states */
-    localparam  S_START     = 5'd0,
-                S_P1TURN    = 5'd1,
-                S_P2TURN    = 5'd2,
-                S_RESULT    = 5'd3 ;
+    localparam  S_START     = 4'd0,
+                S_P1TURN    = 4'd1,
+                S_P2TURN    = 4'd2,
+                S_RESULT    = 4'd3 ;
 
     /* finite state machine logic */
     reg [3:0] current_state, next_state;
@@ -91,7 +92,7 @@ module main(
         endcase
     end
 
-    /* shows current state, for DEBUGGING */
+    /* shows current state, for visuals */
     hex_decoder hex0(
         .hex_digit(current_state),
         .segments(HEX0)
@@ -112,42 +113,50 @@ module main(
     end
 
     /* data control */
-    reg             p1_clock;   // clock for player 1
-    reg             p2_clock;   // clock for player 2
-    reg             rwen;       // 1 for write, 0 for read from ram
-    reg             ram_clock;
-    reg     [3:0]   ram_addr;   // current address pointer of ram for game
+    wire        p1_clock;   // clock for player1 module
+    wire        p2_clock;   // clock for player2 module
+    wire        rwen;       // read/write ram parameter, 0 = read, 1 = write
+    reg         ram_clock;  // clock for ram to signal read/write from/to ram
 
-	 /* current memory address pointer of ram for player1 and player 2 */
-    reg [3:0] p1_addr;
-    reg [3:0] p2_addr;
+    /* p1_clock and p2_clock are only active during their respective
+     * machine states
+     */
+    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 0;
+    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 0;
+    assign rwen     = (current_state == S_P1TURN) ? 1 : 0;
+
+    reg [3:0]   p1_addr;    // current memory address player1 is writing to
+    reg [3:0]   p2_addr;    // current memory address player2 is reading from
+    reg [3:0]   ram_addr;   // current address pointer of ram for the game
+
+    /* visual for memory address of player1 and player2 */
+	hex_decoder hex2(
+        .hex_digit(p1_addr),
+        .segments(HEX2)
+        );
+	hex_decoder hex3(
+        .hex_digit(p2_addr),
+        .segments(HEX3)
+        );
+    hex_decoder hex4(
+        .hex_digit(ram_addr),
+        .segments(HEX4)
+        );
 	 
     /* datapath control */
     always @(*) begin: enable_signals
-        // By default make all our signals 0
         case (current_state)
             S_START: begin
-                p1_clock <= 0;
-                p2_clock <= 0;
                 ram_clock <= 1;
-                rwen <= 0;
             end
             S_P1TURN: begin
-                p1_clock <= clock_1hz;
                 ram_clock <= ~next_input;
-                rwen <= 1;
-                p2_clock <= 0;
             end
             S_P2TURN: begin
-                p1_clock <= 0;
-                rwen <= 0;
                 ram_clock <= ~next_input;
-                p2_clock <= clock_1hz;
             end
-            S_RESULT: begin
-                p1_clock <= 0;
-                p2_clock <= 0;
-                rwen <= 0;
+            default: begin
+                ram_clock <= 0;
             end
         endcase
     end
@@ -159,29 +168,28 @@ module main(
         if (current_state == S_START) begin
             p1_addr <= 0;
             p2_addr <= 0;
+            ram_addr <= 0;
         end
         if (current_state == S_P1TURN)
-            p1_addr <= p1_addr + 1;
             ram_addr <= p1_addr;
+            p1_addr <= p1_addr + 1;
         if (current_state == S_P2TURN)
-            p2_addr <= p2_addr + 1;
             ram_addr <= p2_addr;
+            p2_addr <= p2_addr + 1;
     end
-	 
-	hex_decoder hex2(
-        .hex_digit(p1_addr),
-        .segments(HEX2)
-        );
-	hex_decoder hex3(
-        .hex_digit(p2_addr),
-        .segments(HEX3)
-        );
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [1:0]   p2_value;
+    wire    [1:0]   p2_value;       // input value of player2
 
+    /* indicate whether player2's current input is correct
+     * and whether the entirety of player2's morse code is correct
+     */
+    wire p2_correct, p2_complete;
+
+    /* signal from player2 to draw to vga */
     wire p2_signal = (current_state == S_P2TURN && ~user_input);
+    /* signal indicating the game is over */
     wire game_over = (current_state == S_RESULT);
 
     player1 player1_0(
@@ -201,7 +209,6 @@ module main(
         .q(p1_value_out)
         );
 
-    wire p2_correct;
     player2 player2_0(
         .clock(p2_clock),
         .user_input(user_input),
@@ -211,7 +218,7 @@ module main(
         .p1_value(p1_value_out),
 
         .correct(p2_correct),
-        .complete(LEDR[1]),
+        .complete(p2_complete),
         .q(p2_value)
         );
 
@@ -260,3 +267,4 @@ module main(
 	);
     
 endmodule
+
