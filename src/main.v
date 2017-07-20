@@ -247,14 +247,32 @@ module main(
         .X(x),
         .Y(y),
         .colour(colour),
-        .draw_full(draw_full_box)
+        .draw_full(draw_full_box),
+	.reset(~game_over)
         );
+
+    rate_divider(
+	// input
+	.clock_in(CLOCK_50),
+	.rate(28'b00011_00101_10111_00110_110),
+	
+	// output
+	.clock_out(refresh)
+	);
+	
+    reg h; 
+    always @(posedge refresh) begin
+        if (h)
+            h <= 1'b0;
+        else
+            h <= 1'b1;
+    end
 
     tumbler_vga tummy0(
         .clock(CLOCK_50),
-        .colour_in(3'b111),
+        .colour_in(colour),
         .draw_full(draw_full_box),
-        .draw(KEY[0]),
+        .draw(h),
         .x_in(x),
         .y_in(y),
         .resetn(~game_over),
