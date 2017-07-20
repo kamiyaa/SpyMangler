@@ -5,12 +5,12 @@
 
 module player2(
     // input
-    clock,      // clock
-    user_input, // data in from user
-    next_input, // indicate next input
-    done_input, // indicate user is done with input
-    resetn,     // reset current input
-    p1_value,   // player1's value
+    clock,
+    user_input,
+    next_input,
+    done_input,
+    resetn,
+    p1_value,
 
     // output
     complete,
@@ -18,16 +18,16 @@ module player2(
     q
     );
 
-    input clock;
-    input user_input;
-    input next_input;
-    input done_input;
-    input resetn;
-    input [9:0] p1_value;
+    input clock;            // clock
+    input user_input;       // data in from user
+    input next_input;       // indicate next input
+    input done_input;       // indicate user is done with input
+    input resetn;           // reset current input
+    input [9:0] p1_value;   // player1's value
 
-    output reg correct;
-    output complete;
-    output [9:0] q;
+    output complete;        // whether player2 cracked player1's code or not.
+    output [9:0] q;         // player2's value
+    output reg correct;     // 0 = incorrect input, 1 = correct input
 
     /* states */
     reg [3:0] current_state, next_state;
@@ -60,33 +60,41 @@ module player2(
      * existing morse code */
     always @(posedge clock) begin
         correct <= 0;
-        // morse value is empty
+
+        /* morse code segment is empty */
         if (curr_morse == 2'b00) begin
             correct <= 1;
-            p1_copy <= p1_copy << 2;
         end
-        // concatentate dot binary to player2's input value
-        if (ld_dot) begin
+        /* player2's input is equivalent to a morse code dot */
+        else if (ld_dot) begin
+            /* concatenate player2's new input with prev inputs */
             p2_value <= { p2_value, MORSE_DOT };
-            if (curr_morse == MORSE_DOT) begin
+            /* check if player1's input is the same,
+             * if it is, set correct to 1
+             */
+            if (curr_morse == MORSE_DOT)
                 correct <= 1;
-            end
-            p1_copy <= p1_copy << 2;
         end
-        // concatentate line binary to player2's input value
-        if (ld_line) begin
+        /* player2's input is equivalent to a morse code line */
+        else if (ld_line) begin
+            /* concatenate player2's new input with prev inputs */
             p2_value <= { p2_value, MORSE_LINE };
-            if (curr_morse == MORSE_DOT) begin
+            /* check if player1's input is the same,
+             * if it is, set correct to 1
+             */
+            if (curr_morse == MORSE_LINE)
                 correct <= 1;
-            end
-            p1_copy <= p1_copy << 2;
         end
-        // reset player2 value if incorrect
-	    if (!correct) begin
+
+        /* if player2 guessed the right code, left shift player1's code by 2 */
+	    if (correct)
+            p1_copy <= p1_copy << 2;
+        /* otherwise, reload player1's value and reset player2's value */
+        else begin
             p1_copy <= p1_value;
             p2_value <= 0;
         end
     end
-    assign complete = (p2_value == p1_value);
+    assign complete = correct ? (p2_value == p1_value) : 0;
     assign q = p2_value;
 endmodule
