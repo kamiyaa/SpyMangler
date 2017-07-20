@@ -29,8 +29,6 @@ module player2(
     output [9:0] q;         // player2's value
     output reg correct;     // 0 = incorrect input, 1 = correct input
 
-    /* states */
-    reg [3:0] current_state, next_state;
     /* player2's value */
     reg [9:0] p2_value;
     /* indicate whether dot or line */
@@ -68,7 +66,7 @@ module player2(
         /* player2's input is equivalent to a morse code dot */
         else if (ld_dot) begin
             /* concatenate player2's new input with prev inputs */
-            p2_value <= { p2_value, MORSE_DOT };
+            p2_value <= { p2_value[7:0], MORSE_DOT };
             /* check if player1's input is the same,
              * if it is, set correct to 1
              */
@@ -78,7 +76,7 @@ module player2(
         /* player2's input is equivalent to a morse code line */
         else if (ld_line) begin
             /* concatenate player2's new input with prev inputs */
-            p2_value <= { p2_value, MORSE_LINE };
+            p2_value <= { p2_value[7:0], MORSE_LINE };
             /* check if player1's input is the same,
              * if it is, set correct to 1
              */
