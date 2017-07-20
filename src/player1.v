@@ -12,7 +12,8 @@ module player1(
     resetn,
 
     /* outputs */
-    q
+    q,
+    write
     );
 
     input clock;            // clock
@@ -22,6 +23,7 @@ module player1(
     input resetn;           // reset current input
 
     output [9:0] q;         // player1's value
+    output reg write;
 
     reg [9:0] p1_value;
 
@@ -45,14 +47,19 @@ module player1(
     /* loop to concatentate morse code coming in with
      * existing morse code */
     always @(posedge clock) begin
-        // reset player2 value
-	if (!resetn)
+        if (write) begin
+            write <= 1'b0;
             p1_value <= 10'b0;
+        end
+        // reset player2 value
+        else if (!next_input) begin
+            write <= 1'b1;
+        end
         // concatentate dot binary to player2's input value
-        if (ld_dot)
+        else if (ld_dot)
             p1_value <= { p1_value[7:0], MORSE_DOT };
         // concatentate line binary to player2's input value
-        if (ld_line)
+        else if (ld_line)
             p1_value <= { p1_value[7:0], MORSE_LINE };
     end
     assign q = p1_value;
