@@ -25,6 +25,9 @@ module player1(
 
     reg [9:0] p1_value;
 
+    /* indicate whether dot or line */
+    wire ld_dot, ld_line;
+
     /* finite states */
     localparam  MORSE_DOT   = 2'b01,
                 MORSE_LINE  = 2'b11 ;
@@ -46,10 +49,10 @@ module player1(
             p1_value <= 0;
         // concatentate dot binary to player2's input value
         if (ld_dot)
-            p1_value <= { p1_value, MORSE_DOT };
+            p1_value <= { p1_value[7:0], MORSE_DOT };
         // concatentate line binary to player2's input value
         if (ld_line)
-            p1_value <= { p1_value, MORSE_LINE };
+            p1_value <= { p1_value[7:0], MORSE_LINE };
     end
     assign q = p1_value;
 endmodule
