@@ -17,20 +17,22 @@ module morse_decoder(
     input resetn;     // reset button
 
     /* indicate whether a dot or line was detected */
-    output reg ld_dot, ld_line;
+    output ld_dot, ld_line;
+
+    reg morse_dot, morse_line;
 
     /* registers to hold the current state and next state */
     reg [3:0] current_state, next_state;
 
     /* finite states */
-    localparam  S_F1    = 5'd0,
-                S_F2    = 5'd1,
-                S_F3    = 5'd2,
-                S_F4    = 5'd3,
-                S_DOT   = 5'd4,
-                S_LINE  = 5'd5 ;
+    localparam  S_F1    = 4'd0,
+                S_F2    = 4'd1,
+                S_F3    = 4'd2,
+                S_F4    = 4'd3,
+                S_DOT   = 4'd4,
+                S_LINE  = 4'd5 ;
 
-    // Next state logic aka our state table
+    /* finite state machine logic */
     always @(*) begin: state_table
         case (current_state)
             /*                                    not pressed   pressed */
@@ -42,26 +44,26 @@ module morse_decoder(
             S_LINE:     next_state = user_input ? S_F1    :     S_F2;
             default:    next_state = S_F1;
         endcase
-    end     // state_table
+    end
 
+    /* datapath control */
     always @(*) begin: enable_signals
         case (current_state)
             /* set ld_dot to 1 when we've detected a dot */
             S_DOT: begin
-                ld_dot = 1'b1;
+                morse_dot = 1'b1;
             end
             /* set ld_line to 1 when we've detected a line */
             S_LINE: begin
-                ld_line = 1'b1;
+                morse_line = 1'b1;
             end
             default: begin
                 /* By default make all our signals 0 */
-                ld_dot = 1'b0;
-                ld_line = 1'b0;
+                morse_dot = 1'b0;
+                morse_line = 1'b0;
             end
         endcase
-    end    // enable_signals
-   
+    end
 
     /* current_state registers */
     always@(posedge clock) begin: state_FFs
@@ -71,5 +73,8 @@ module morse_decoder(
         /* otherwise, current_state goes to next_state */
         else
             current_state <= next_state;
-    end // state_FFS
+    end
+
+    assign ld_dot = morse_dot;
+    assign ld_line = morse_line;
 endmodule
