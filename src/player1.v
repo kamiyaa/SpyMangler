@@ -6,22 +6,22 @@
 module player1(
     /* inputs */
     clock,
-    user_input,     // user input data
-    next_input,     // user input indicating next char
-    done_input,     // user input indicating end of turn
-    resetn,         // reset current input
+    user_input,
+    next_input,
+    done_input,
+    resetn,
 
     /* outputs */
     q
     );
 
-    input clock;
-    input user_input;
-    input next_input;
-    input done_input;
-    input resetn;
+    input clock;            // clock
+    input user_input;       // data in from user
+    input next_input;       // indicate next input (next character)
+    input done_input;       // indicate user is done with input
+    input resetn;           // reset current input
 
-    output [9:0] q;
+    output [9:0] q;         // player1's value
 
     reg [9:0] p1_value;
 
