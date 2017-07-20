@@ -15,6 +15,7 @@ module player2(
     // output
     complete,
     correct,
+    read,
     q
     );
 
@@ -27,7 +28,9 @@ module player2(
 
     output complete;        // whether player2 cracked player1's code or not.
     output [9:0] q;         // player2's value
-    output reg correct;     // 0 = incorrect input, 1 = correct input
+    output [1:0] correct;
+    output reg read;
+    reg [1:0] user_result;  // 0 = incorrect input, 1 = correct input
 
     /* player2's value */
     reg [9:0] p2_value;
@@ -41,6 +44,10 @@ module player2(
     localparam  MORSE_NONE  = 2'b00,
                 MORSE_DOT   = 2'b01,
                 MORSE_LINE  = 2'b11 ;
+
+    localparam  NEUTRAL     = 2'b00,
+                CORRECT     = 2'b01,
+                INCORRECT   = 2'b10 ;
 
     /* module to take in input and convert to morse code */
     morse_decoder morse2(
@@ -57,11 +64,17 @@ module player2(
     /* loop to concatentate morse code coming in with
      * existing morse code */
     always @(posedge clock) begin
-        correct <= 1'b0;
+        user_result <= NEUTRAL;
+        if (!next_input) begin
+            p2_value <= 10'b0;
+            read <= 1'b1;
+        end
+        else
+            read <= 1'b0;
 
         /* morse code segment is empty */
         if (curr_morse == MORSE_NONE) begin
-            correct <= 1'b1;
+            user_result <= CORRECT;
         end
         /* player2's input is equivalent to a morse code dot */
         else if (ld_dot) begin
@@ -71,7 +84,9 @@ module player2(
              * if it is, set correct to 1
              */
             if (curr_morse == MORSE_DOT)
-                correct <= 1'b1;
+                user_result <= CORRECT;
+            else
+                user_result <= INCORRECT;
         end
         /* player2's input is equivalent to a morse code line */
         else if (ld_line) begin
@@ -81,18 +96,21 @@ module player2(
              * if it is, set correct to 1
              */
             if (curr_morse == MORSE_LINE)
-                correct <= 1'b1;
+                user_result <= CORRECT;
+            else
+                user_result <= INCORRECT;
         end
 
         /* if player2 guessed the right code, left shift player1's code by 2 */
-	    if (correct)
+	    if (user_result == CORRECT)
             p1_copy <= p1_copy << 2;
         /* otherwise, reload player1's value and reset player2's value */
-        else begin
+        else if (user_result == INCORRECT) begin
             p1_copy <= p1_value;
             p2_value <= 10'b0;
         end
     end
-    assign complete = correct ? (p2_value == p1_value) : 1'b0;
+    assign correct = user_result;
+    assign complete = clock ? (p2_value == p1_value) : 1'b0;
     assign q = p2_value;
 endmodule

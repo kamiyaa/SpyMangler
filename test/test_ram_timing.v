@@ -81,44 +81,26 @@ module test_ram_timing(
     end
 
     /* data control */
-    reg             p1_clock;   // clock for player 1
-    reg             p2_clock;   // clock for player 2
-    reg             rwen;       // 1 for write, 0 for read from ram
-    reg             ram_clock;
-    reg     [3:0]   ram_addr;   // current address pointer of ram for game
+    wire        p1_clock;   // clock for player1 module
+    wire        p2_clock;   // clock for player2 module
+    wire        rwen;       // read/write ram parameter, 0 = read, 1 = write
+    /* p1_clock and p2_clock are only active during their respective
+     * machine states
+     */
+    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 1'b0;
+    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 1'b0;
+    /* enable write to ram only during player1's turn */
+    assign rwen     = (current_state == S_P1TURN) ? 1'b1 : 1'b0;
+
+    wire             ram_clock; // clock for ram to signal read/write from/to ram
+    wire     [3:0]   ram_addr;  // current address pointer of ram for game
+
+    assign ram_clock = ~next_input;
+	assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
+
 	 /* current memory address pointer of ram for player1 and player 2 */
     reg     [3:0]   p1_addr;
     reg     [3:0]   p2_addr;
-	 
-    /* datapath control */
-    always @(*) begin: enable_signals
-        // By default make all our signals 0
-        case (current_state)
-            S_START: begin
-                p1_clock <= 0;
-                p2_clock <= 0;
-                ram_clock <= 1;
-                rwen <= 0;
-            end
-            S_P1TURN: begin
-                p1_clock <= clock_1hz;
-                ram_clock <= ~next_input;
-                rwen <= 1;
-                p2_clock <= 0;
-            end
-            S_P2TURN: begin
-                p1_clock <= 0;
-                rwen <= 0;
-                ram_clock <= ~next_input;
-                p2_clock <= clock_1hz;
-            end
-            S_RESULT: begin
-                p1_clock <= 0;
-                p2_clock <= 0;
-                rwen <= 0;
-            end
-        endcase
-    end
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
@@ -172,17 +154,16 @@ module test_ram_timing(
     always @(*) begin
         if (current_state == S_P1TURN)
             ledr_value <= p1_value;
-        if (current_state == S_P2TURN)
+        else if (current_state == S_P2TURN)
             ledr_value <= p1_value_out;
+        else
+            ledr_value <= 10'b1111_1111_11;
     end
 
     assign LEDR = ledr_value;
 
     /* current_state registers */
     always@(posedge clock_1hz) begin: state_FFs
-        if (!resetn)
-            current_state <= S_START;
-        else
-            current_state <= next_state;
+        current_state <= next_state;
     end
 endmodule
