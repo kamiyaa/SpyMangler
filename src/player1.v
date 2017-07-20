@@ -29,7 +29,8 @@ module player1(
     wire ld_dot, ld_line;
 
     /* finite states */
-    localparam  MORSE_DOT   = 2'b01,
+    localparam  MORSE_NONE  = 2'b00,
+                MORSE_DOT   = 2'b01,
                 MORSE_LINE  = 2'b11 ;
 
     /* module to take in input and convert to morse code */
@@ -46,7 +47,7 @@ module player1(
     always @(posedge clock) begin
         // reset player2 value
 	     if (!resetn)
-            p1_value <= 0;
+            p1_value <= 10'b0;
         // concatentate dot binary to player2's input value
         if (ld_dot)
             p1_value <= { p1_value[7:0], MORSE_DOT };

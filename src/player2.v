@@ -57,11 +57,11 @@ module player2(
     /* loop to concatentate morse code coming in with
      * existing morse code */
     always @(posedge clock) begin
-        correct <= 0;
+        correct <= 1'b0;
 
         /* morse code segment is empty */
-        if (curr_morse == 2'b00) begin
-            correct <= 1;
+        if (curr_morse == MORSE_NONE) begin
+            correct <= 1'b1;
         end
         /* player2's input is equivalent to a morse code dot */
         else if (ld_dot) begin
@@ -71,7 +71,7 @@ module player2(
              * if it is, set correct to 1
              */
             if (curr_morse == MORSE_DOT)
-                correct <= 1;
+                correct <= 1'b1;
         end
         /* player2's input is equivalent to a morse code line */
         else if (ld_line) begin
@@ -81,7 +81,7 @@ module player2(
              * if it is, set correct to 1
              */
             if (curr_morse == MORSE_LINE)
-                correct <= 1;
+                correct <= 1'b1;
         end
 
         /* if player2 guessed the right code, left shift player1's code by 2 */
@@ -90,9 +90,9 @@ module player2(
         /* otherwise, reload player1's value and reset player2's value */
         else begin
             p1_copy <= p1_value;
-            p2_value <= 0;
+            p2_value <= 10'b0;
         end
     end
-    assign complete = correct ? (p2_value == p1_value) : 0;
+    assign complete = correct ? (p2_value == p1_value) : 1'b0;
     assign q = p2_value;
 endmodule
