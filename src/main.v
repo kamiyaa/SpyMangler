@@ -51,7 +51,7 @@ module main(
     input   [3:0]   KEY;
     input   [17:0]  SW;
     /* ouputs */
-    output  [9:0]   LEDR;
+    output  [17:0]   LEDR;
     output  [7:0]   LEDG;
     output  [6:0]   HEX0, HEX2, HEX3, HEX4;
 
@@ -180,8 +180,7 @@ module main(
     end
 
     assign LEDG[7] = p2_complete;
-    assign LEDG[6] = (p2_correct == 2'b01);
-    assign LEDG[5] = (p2_correct == 2'b10);
+    assign LEDG[6:5] = p2_correct;
     assign LEDG[4] = p2_signal;
 
 
@@ -214,7 +213,7 @@ module main(
         .correct(p2_correct),
         .complete(p2_complete),
         .read(p2_read),
-        .q(p2_value)
+        .q(LEDR[17:10])
         );
 
     reg [9:0] ledr_value;
@@ -228,7 +227,7 @@ module main(
             ledr_value <= 10'b1111_1111_11;
     end
 
-    assign LEDR = ledr_value;
+    assign LEDR[9:0] = ledr_value;
 
     /* current_state registers */
     always@(posedge clock_1hz) begin: state_FFs
@@ -240,9 +239,6 @@ module main(
     wire [2:0] colour;
     wire draw_full_box;
 
-    assign LEDR[2] = p2_correct;
-    assign LEDR[3] = p2_signal;
-
     translator trans0(
         .correct(p2_correct),     // 1bit, 1 if user input matches, 0 otherwise
         .signal(p2_signal),      // signal to refresh/redraw... Automatically moves to next
@@ -252,17 +248,17 @@ module main(
         .Y(y),
         .colour(colour),
         .draw_full(draw_full_box),
-	.reset(~game_over)
+        .reset(~game_over)
         );
 
-    rate_divider(
-	// input
-	.clock_in(CLOCK_50),
-	.rate(28'b00011_00101_10111_00110_110),
+    rate_divider rate2(
+	    // input
+	    .clock_in(CLOCK_50),
+	    .rate(28'b00011_00101_10111_00110_110),
 	
-	// output
-	.clock_out(refresh)
-	);
+	    // output
+	    .clock_out(refresh)
+	    );
 	
     reg h; 
     always @(posedge refresh) begin
