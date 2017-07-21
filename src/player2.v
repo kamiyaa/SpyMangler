@@ -39,6 +39,9 @@ module player2(
     /* player1 copy */
     reg [9:0] p1_copy;
 
+    /*  */
+    reg [1:0] user_result;
+
     /* finite states */
     localparam  MORSE_NONE  = 2'b00,
                 MORSE_DOT   = 2'b01,
@@ -57,10 +60,6 @@ module player2(
         .ld_line(ld_line)
         );
 
-    wire [1:0] curr_morse;
-    assign curr_morse = p1_copy[9:8];
-    reg [1:0] user_result;
-
     /* loop to concatentate morse code coming in with
      * existing morse code */
     always @(posedge clock) begin
@@ -74,8 +73,10 @@ module player2(
             read <= 1'b1;
         end
         /* morse code segment is empty */
-        else if (curr_morse == MORSE_NONE)
+        else if (p1_copy[9:8] == 2'b00) begin
             user_result <= CORRECT;
+            p1_copy <= p1_copy[7:0] << 2;
+        end
         /* player2's input is equivalent to a morse code dot */
         else if (ld_dot) begin
             /* concatenate player2's new input with prev inputs */
@@ -83,10 +84,15 @@ module player2(
             /* check if player1's input is the same,
              * if it is, set correct to 1
              */
-            if (curr_morse == MORSE_DOT)
+            if (p1_copy[9:8] == MORSE_DOT) begin
+                p1_copy <= p1_copy[7:0] << 2;
                 user_result <= CORRECT;
-            else
+            end
+            else begin
                 user_result <= INCORRECT;
+                p1_copy <= p1_value;
+                p2_value <= 10'b0;
+            end
         end
         /* player2's input is equivalent to a morse code line */
         else if (ld_line) begin
@@ -95,23 +101,19 @@ module player2(
             /* check if player1's input is the same,
              * if it is, set correct to 1
              */
-            if (curr_morse == MORSE_LINE)
+            if (p1_copy[9:8] == MORSE_LINE) begin
+                p1_copy <= p1_copy[7:0] << 2;
                 user_result <= CORRECT;
-            else
+            end
+            else begin
                 user_result <= INCORRECT;
-        end
-
-        /* if player2 guessed the right code, left shift player1's code by 2 */
-	    if (user_result == CORRECT)
-            p1_copy <= { p1_copy[7:0], 2'b00 };
-        /* otherwise, reload player1's value and reset player2's value */
-        else if (user_result == INCORRECT) begin
-            p1_copy <= p1_value;
-            p2_value <= 10'b0;
+                p1_copy <= p1_value;
+                p2_value <= 10'b0;
+            end
         end
     end
     assign correct = user_result;
     assign complete = clock ? (p2_value == p1_value) : 1'b0;
-    assign q = p2_value;
+    assign q = p1_copy;
 endmodule
 
