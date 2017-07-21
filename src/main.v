@@ -130,7 +130,7 @@ module main(
     /* enable write to ram only during player1's turn */
     assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
 
-    assign ram_clock = (current_state == S_START) ? ~resetn : ((current_state == S_P1TURN) ? p1_write : p2_read);
+    assign ram_clock = (current_state == S_START) ? ~done_input : ((current_state == S_P1TURN) ? p1_write : p2_read);
 	assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
