@@ -115,12 +115,12 @@ module main(
     end
 
     /* data control */
-    wire        p1_clock;   // clock for player1 module
-    wire        p2_clock;   // clock for player2 module
-    wire        rwen;       // read/write ram parameter, 0 = read, 1 = write
-    wire        ram_clock;  // clock for ram to signal read/write from/to ram
-    wire [3:0]  ram_addr;   // current address pointer of ram for the game
-    wire p1_write, p2_read;
+    wire            p1_clock;   // clock for player1 module
+    wire            p2_clock;   // clock for player2 module
+    wire            rwen;       // read/write ram parameter, 0 = read, 1 = write
+    wire            ram_clock;  // clock for ram to signal read/write from/to ram
+    wire    [3:0]   ram_addr;   // current address pointer of ram for the game
+    wire p1_write,  p2_read;
 
     /* p1_clock and p2_clock are only active during their respective
      * machine states
@@ -128,7 +128,7 @@ module main(
     assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 1'b0;
     assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 1'b0;
     /* enable write to ram only during player1's turn */
-    assign rwen     = (current_state == S_P1TURN) ? 1'b1 : 1'b0;
+    assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
 
     assign ram_clock = (current_state == S_START) ? ~resetn : ((current_state == S_P1TURN) ? p1_write : p2_read);
 	assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
@@ -179,11 +179,6 @@ module main(
             p2_addr <= p2_addr + 1'b1;
     end
 
-    assign LEDG[7] = p2_complete;
-    assign LEDG[6:5] = p2_correct;
-    assign LEDG[4] = p2_signal;
-
-
     player1 player1_0(
         .clock(p1_clock),
         .user_input(user_input),
@@ -209,12 +204,14 @@ module main(
         .done_input(done_input),
         .resetn(resetn),
         .p1_value(p1_value_out),
-
         .correct(p2_correct),
         .complete(p2_complete),
         .read(p2_read),
         .q(LEDR[17:10])
         );
+    assign LEDG[7] = p2_complete;
+    assign LEDG[6:5] = p2_correct;
+    assign LEDG[4] = p2_signal;
 
     reg [9:0] ledr_value;
 
