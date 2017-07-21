@@ -57,7 +57,8 @@ module main(
 
 
     /* Constants */
-    localparam ONE_HZ = 28'b0010111110101111000010000000;
+    localparam  ONE_HZ = 28'b0010111110101111000010000000,
+                TWO_HZ = 28'd25000000;
 
     /* input maps */
     wire user_input = KEY[0];
@@ -230,7 +231,6 @@ module main(
     always@(posedge clock_1hz) begin: state_FFs
         current_state <= next_state;
     end
-
 
     wire [7:0] x,y;
     wire [2:0] colour;
