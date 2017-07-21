@@ -5,4 +5,4 @@ Team Name: Snackbar
 
 Project Name: SpyMangler, a derivative of the infamous CodeMangler
 # ----------Instructions--------------
-#drop b58 kappa
+Dear Future B58 students, we received 69% on this project
