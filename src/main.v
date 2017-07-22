@@ -171,6 +171,7 @@ module main(
                 p1_addr <= 1'b0;
                 p2_addr <= 1'b0;
             end
+        endcase
     end
 
     player1 player1_0(
