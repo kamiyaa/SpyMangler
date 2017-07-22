@@ -164,7 +164,7 @@ module main(
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
-        case (current_state):
+        case (current_state)
             S_P1TURN:   p1_addr <= p1_addr + 1'b1;
             S_P2TURN:   p2_addr <= p2_addr + 1'b1;
             default: begin
@@ -211,18 +211,16 @@ module main(
     assign LEDG[6:5] = p2_correct;
     assign LEDG[4] = abcd_kyle_signal;
 
+    /* output to LEDR of user input */
     reg [9:0] ledr_value;
-
-    always @(*) begin
-        if (current_state == S_P1TURN)
-            ledr_value <= p1_value;
-        else if (current_state == S_P2TURN)
-            ledr_value <= p1_value_out;
-        else
-            ledr_value <= 10'b1111_1111_11;
-    end
-
     assign LEDR[9:0] = ledr_value;
+    always @(*) begin
+        case (current_state)
+            S_P1TURN:   ledr_value <= p1_value;
+            S_P2TURN:   ledr_value <= p1_value_out;
+            default:    ledr_value <= 10'b1111_1111_11;
+        endcase
+    end
 
     /* current_state registers */
     always@(posedge clock_2hz) begin: state_FFs
