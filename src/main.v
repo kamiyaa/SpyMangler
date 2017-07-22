@@ -72,7 +72,7 @@ module main(
     rate_divider rate0(
         .clock_in(clock),
         .clock_out(clock_1hz),
-        .rate(ONE_HZ)
+        .rate(TWO_HZ)
         );
 
     /* registers to hold the current state and next state */
@@ -132,7 +132,7 @@ module main(
     assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
 
     assign ram_clock = (current_state == S_START) ? ~done_input : ((current_state == S_P1TURN) ? p1_write : p2_read);
-	assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
+    assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
@@ -144,14 +144,8 @@ module main(
     wire [1:0] p2_correct;
     wire p2_complete;
 
-    /* signal from player2 to draw to vga */
-    wire p2_signal = (current_state == S_P2TURN && ~user_input);
-    /* signal indicating the game is over */
-    wire game_over = (current_state == S_RESULT);
-
     reg [3:0]   p1_addr;    // current memory address player1 is writing to
     reg [3:0]   p2_addr;    // current memory address player2 is reading from
-
 
     /* visual for memory address of player1 and player2 */
     hex_decoder hex2(
@@ -174,9 +168,9 @@ module main(
             p1_addr <= 1'b0;
             p2_addr <= 1'b0;
         end
-        if (current_state == S_P1TURN)
+        else if (current_state == S_P1TURN)
             p1_addr <= p1_addr + 1'b1;
-        if (current_state == S_P2TURN)
+        else if (current_state == S_P2TURN)
             p2_addr <= p2_addr + 1'b1;
     end
 
@@ -210,9 +204,12 @@ module main(
         .read(p2_read),
         .q(LEDR[17:10])
         );
+
+    /* signal from player2 to draw to vga */
+    wire abcd_kyle_signal = (p2_correct != 2'b00);
     assign LEDG[7] = p2_complete;
     assign LEDG[6:5] = p2_correct;
-    assign LEDG[4] = p2_signal;
+    assign LEDG[4] = abcd_kyle_signal;
 
     reg [9:0] ledr_value;
 
@@ -237,10 +234,10 @@ module main(
     wire draw_full_box;
 
     translator trans0(
-        .correct(p2_correct),     // 1bit, 1 if user input matches, 0 otherwise
-        .signal(p2_signal),      // signal to refresh/redraw... Automatically moves to next
+        .correct(p2_correct[0]),     // 1bit, 1 if user input matches, 0 otherwise
+        .signal(abcd_kyle_signal),      // signal to refresh/redraw... Automatically moves to next
         .columns(p1_addr),     // 6bit, binary of number of columns in code
-        .selection(p2_value),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
+        .selection(p2_value[1:0]),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
         .Y(y),
         .colour(colour),
@@ -272,7 +269,7 @@ module main(
         .draw(h),
         .x_in(x),
         .y_in(y),
-        .resetn(~game_over),
+        .resetn(1'b0),
         .VGA_CLK(VGA_CLK),        //____VGA Clock
         .VGA_HS(VGA_HS),            //____VGA H_SYNC
         .VGA_VS(VGA_VS),            //____VGA V_SYNC
