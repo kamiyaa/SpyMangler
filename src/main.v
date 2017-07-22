@@ -68,10 +68,10 @@ module main(
     wire clock      = CLOCK_50;
 
     /* 1Hz clock using a rate divider */
-    wire clock_1hz;
+    wire clock_2hz;
     rate_divider rate0(
         .clock_in(clock),
-        .clock_out(clock_1hz),
+        .clock_out(clock_2hz),
         .rate(TWO_HZ)
         );
 
@@ -104,7 +104,7 @@ module main(
     /* morse code visual for user on LEDG */
     reg [2:0] input_mem;
     assign LEDG[2:0] = input_mem;
-    always @(posedge clock_1hz) begin
+    always @(posedge clock_2hz) begin
         /* no user input */
         if (user_input)
             input_mem <= 3'b0;
@@ -126,8 +126,8 @@ module main(
     /* p1_clock and p2_clock are only active during their respective
      * machine states
      */
-    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 1'b0;
-    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 1'b0;
+    assign p1_clock = (current_state == S_P1TURN) ? clock_2hz : 1'b0;
+    assign p2_clock = (current_state == S_P2TURN) ? clock_2hz : 1'b0;
     /* enable write to ram only during player1's turn */
     assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
 
@@ -164,14 +164,13 @@ module main(
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
-        if (current_state == S_START) begin
-            p1_addr <= 1'b0;
-            p2_addr <= 1'b0;
-        end
-        else if (current_state == S_P1TURN)
-            p1_addr <= p1_addr + 1'b1;
-        else if (current_state == S_P2TURN)
-            p2_addr <= p2_addr + 1'b1;
+        case (current_state):
+            S_P1TURN:   p1_addr <= p1_addr + 1'b1;
+            S_P2TURN:   p2_addr <= p2_addr + 1'b1;
+            default: begin
+                p1_addr <= 1'b0;
+                p2_addr <= 1'b0;
+            end
     end
 
     player1 player1_0(
@@ -225,7 +224,7 @@ module main(
     assign LEDR[9:0] = ledr_value;
 
     /* current_state registers */
-    always@(posedge clock_1hz) begin: state_FFs
+    always@(posedge clock_2hz) begin: state_FFs
         current_state <= next_state;
     end
 
