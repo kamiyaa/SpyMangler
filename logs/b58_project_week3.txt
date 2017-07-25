@@ -1,35 +1,5 @@
 CSCB58 Project File: Summer 2017
 
-Team Member A
--------------
-First Name: Jiayi
-Last Name: Zhao
-Student Number: 1003193313
-UofT E-mail Address: jiayii.zhao@mail.utoronto.ca
-
-Team Member B
--------------
-First Name: Wenhui
-Last Name: Zhao
-Student Number: 1003349726
-UofT E-mail Address: daniell.zhao@mail.utoronto.ca
-
-Team Member C
--------------
-First Name: Tsz Cheuk
-Last Name: So
-Student Number: 1003137562
-UofT E-mail Address: tszcheuk.so@mail.utoronto.ca
-
-Team Member D
--------------
-First Name: Andrew
-Last Name: Fung
-Student Number: 1003443945
-UofT E-mail Address: andrewr.fung@mail.utoronto.ca
-
-Project Details
----------------
 Project Title: SpyMangler
 
 Simple Project Description: Two players that work together to successfully encrypt/decrypt each other’s messages with “random elements” added to each level they progress through.
