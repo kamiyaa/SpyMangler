@@ -114,6 +114,6 @@ module player2(
     end
     assign correct = user_result;
     assign complete = clock ? (p2_value == p1_value) : 1'b0;
-    assign q = p1_copy;
+    assign q = p2_value;
 endmodule
 
