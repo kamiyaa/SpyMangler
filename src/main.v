@@ -136,7 +136,7 @@ module main(
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [1:0]   p2_value;       // input value of player2
+    wire    [9:0]   p2_value;
 
     /* indicate whether player2's current input is correct
      * and whether the entirety of player2's morse code is correct
@@ -202,7 +202,7 @@ module main(
         .correct(p2_correct),
         .complete(p2_complete),
         .read(p2_read),
-        .q(LEDR[17:10])
+        .q(p2_value)
         );
 
     /* signal from player2 to draw to vga */
@@ -217,7 +217,7 @@ module main(
     always @(*) begin
         case (current_state)
             S_P1TURN:   ledr_value <= p1_value;
-            S_P2TURN:   ledr_value <= p1_value_out;
+            S_P2TURN:   ledr_value <= p2_value;
             default:    ledr_value <= 10'b1111_1111_11;
         endcase
     end
@@ -238,7 +238,7 @@ module main(
 
     translator trans0(
         .correct(vga_correct_hold),     // 1bit, 1 if user input matches, 0 otherwise
-        .signal(abcd_kyle_signal),      // signal to refresh/redraw... Automatically moves to next
+        .signal(user_input),	// signal to refresh/redraw... Automatically moves to next
         .columns(p1_addr),              // 6bit, binary of number of columns in code
         .selection(p2_value[1:0]),      // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
@@ -272,7 +272,7 @@ module main(
         .draw(h),
         .x_in(x),
         .y_in(y),
-        .resetn(1'b0),
+        .resetn(~game_over),
         .VGA_CLK(VGA_CLK),        //____VGA Clock
         .VGA_HS(VGA_HS),            //____VGA H_SYNC
         .VGA_VS(VGA_VS),            //____VGA V_SYNC
