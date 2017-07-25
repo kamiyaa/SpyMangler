@@ -56,7 +56,7 @@ module main(
     output  [6:0]   HEX0, HEX2, HEX3, HEX4;
 
 
-    /* Constants */
+    /* Clock rate constants */
     localparam  ONE_HZ = 28'b0010111110101111000010000000,
                 TWO_HZ = 28'd25000000;
 
@@ -67,7 +67,7 @@ module main(
     wire resetn     = KEY[3];
     wire clock      = CLOCK_50;
 
-    /* 1Hz clock using a rate divider */
+    /* 2Hz clock using a rate divider */
     wire clock_2hz;
     rate_divider rate0(
         .clock_in(clock),
@@ -223,8 +223,13 @@ module main(
     end
 
     /* current_state registers */
-    always@(posedge clock_2hz) begin: state_FFs
+    always @(posedge clock_2hz) begin: state_FFs
         current_state <= next_state;
+    end
+
+    reg vga_correct_hold;
+    always @(posedge abcd_kyle_signal) begin
+        vga_correct_hold <= p2_correct[0];
     end
 
     wire [7:0] x,y;
@@ -232,10 +237,10 @@ module main(
     wire draw_full_box;
 
     translator trans0(
-        .correct(p2_correct[0]),     // 1bit, 1 if user input matches, 0 otherwise
+        .correct(vga_correct_hold),     // 1bit, 1 if user input matches, 0 otherwise
         .signal(abcd_kyle_signal),      // signal to refresh/redraw... Automatically moves to next
-        .columns(p1_addr),     // 6bit, binary of number of columns in code
-        .selection(p2_value[1:0]),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
+        .columns(p1_addr),              // 6bit, binary of number of columns in code
+        .selection(p2_value[1:0]),      // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
         .Y(y),
         .colour(colour),
