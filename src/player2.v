@@ -15,7 +15,6 @@ module player2(
     // output
     complete,
     correct,
-    read,
     q
     );
 
@@ -29,7 +28,6 @@ module player2(
     output complete;        // whether player2 cracked player1's code or not.
     output [9:0] q;         // player2's value
     output [1:0] correct;
-    output reg read;
 
     /* player2's value */
     reg [9:0] p2_value;
@@ -64,13 +62,8 @@ module player2(
      * existing morse code */
     always @(posedge clock) begin
         user_result <= NEUTRAL;
-        if (read) begin
-            read <= 1'b0;
-            p1_copy <= p1_value;
-        end
-        else if (!next_input) begin
+        if (resetn) begin
             p2_value <= 10'b0;
-            read <= 1'b1;
         end
         /* morse code segment is empty */
         else if (p1_copy[9:8] == 2'b00) begin
