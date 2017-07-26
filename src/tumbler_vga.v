@@ -25,6 +25,8 @@ module tumbler_vga(
     VGA_G,          //  VGA Green[9:0]
     VGA_B           //  VGA Blue[9:0]
     );
+    /* parameter passed in indicating the .mif file to load */
+    parameter BACKGROUND_IMAGE = "background.mif";
 
     input clock;        //  50 MHz expected
     input [2:0] colour_in;
@@ -70,7 +72,7 @@ module tumbler_vga(
         defparam VGA.RESOLUTION = "160x120";
         defparam VGA.MONOCHROME = "FALSE";
         defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-        defparam VGA.BACKGROUND_IMAGE = "../res/spybackground.mif";
+        defparam VGA.BACKGROUND_IMAGE = BACKGROUND_IMAGE;
 
     wire draw, draw_full;
 

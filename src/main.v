@@ -51,13 +51,13 @@ module main(
     input   [3:0]   KEY;
     input   [17:0]  SW;
     /* ouputs */
-    output  [17:0]   LEDR;
+    output  [17:0]  LEDR;
     output  [7:0]   LEDG;
     output  [6:0]   HEX0, HEX2, HEX3, HEX4;
 
 
-    /* Clock rate constants */
-    localparam  ONE_HZ = 28'b0010111110101111000010000000,
+    /* Constants */
+    localparam  ONE_HZ = 28'd50000000,
                 TWO_HZ = 28'd25000000;
 
     /* input maps */
@@ -115,37 +115,20 @@ module main(
             input_mem <= { input_mem[1:0], 1'b1 };
     end
 
-    /* data control */
-    wire            p1_clock;   // clock for player1 module
-    wire            p2_clock;   // clock for player2 module
-    wire            rwen;       // read/write ram parameter, 0 = read, 1 = write
-    wire            ram_clock;  // clock for ram to signal read/write from/to ram
-    wire    [3:0]   ram_addr;   // current address pointer of ram for the game
-    wire p1_write,  p2_read;
+    /* wires indicating turns */
+    wire player1_turn   = (current_state == S_P1TURN);
+    wire game_over      = (current_state == S_RESULT);
 
-    /* p1_clock and p2_clock are only active during their respective
-     * machine states
-     */
-    assign p1_clock = (current_state == S_P1TURN) ? clock_2hz : 1'b0;
-    assign p2_clock = (current_state == S_P2TURN) ? clock_2hz : 1'b0;
-    /* enable write to ram only during player1's turn */
-    assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
+    /* clocks for player1 and player2 module that controls when they are active */
+    wire p1_clock       = player1_turn ? clock_2hz : 1'b0;
+    wire p2_clock       = (current_state == S_P2TURN) ? clock_2hz : 1'b0;
 
-    assign ram_clock = (current_state == S_START) ? ~done_input : ((current_state == S_P1TURN) ? p1_write : p2_read);
-    assign ram_addr = (current_state == S_P1TURN) ? p1_addr : p2_addr;
-
-    wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
-    wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [9:0]   p2_value;
-
-    /* indicate whether player2's current input is correct
-     * and whether the entirety of player2's morse code is correct
-     */
-    wire [1:0] p2_correct;
-    wire p2_complete;
-
-    reg [3:0]   p1_addr;    // current memory address player1 is writing to
-    reg [3:0]   p2_addr;    // current memory address player2 is reading from
+    /* current memory address player1 is writing to */
+    reg [3:0]   p1_addr;
+    /* current memory address player2 is reading from */
+    reg [3:0]   p2_addr;
+    /* current address pointer of ram for the game */
+    wire [3:0]  ram_addr = player1_turn ? p1_addr : p2_addr;
 
     /* visual for memory address of player1 and player2 */
     hex_decoder hex2(
@@ -161,12 +144,48 @@ module main(
         .segments(HEX4)
         );
 
+    reg ram_clock;  // clock signal for ram to read/write from/to ram
+    reg rwen;       // read/write ram parameter, 0 = read, 1 = write
+
+    wire [9:0]  p1_value;           // input value by player1
+    reg [9:0]   player1_value;      // reg to hold player1's input
+    wire [9:0]  p1_value_out;       // player1's value out from ram
+    wire [9:0]  p2_value;           // input value of player2
+    reg [9:0]   p2_compare_value;   // value player2 must compare with
+
+    reg p1_reset_n; // reset for player1
+    reg p2_reset_n; // reset for player2
+
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
-    always @(posedge ram_clock) begin
+    always @(posedge ~next_input) begin
+        rwen <= 0;
+        ram_clock <= 0;
+        p1_reset_n <= 0;
+        p2_reset_n <= 0;
         case (current_state)
-            S_P1TURN:   p1_addr <= p1_addr + 1'b1;
-            S_P2TURN:   p2_addr <= p2_addr + 1'b1;
+            /* store player1's input into register,
+             * increment player1's ram pointer to new space,
+             * enable writing to ram and finally start the ram clock
+             */
+            S_P1TURN: begin
+                player1_value <= p1_value;
+                p1_addr <= p1_addr + 1'b1;
+                rwen <= 1;
+                ram_clock <= 1;
+                p1_reset_n <= 1;
+            end
+            /* increment player2's ram pointer to new space,
+             * start the ram clock to receive a value and
+             * store it in a register
+             */
+            S_P2TURN: begin
+                p2_addr <= p2_addr + 1'b1;
+                ram_clock <= 1;
+                p2_compare_value <= p1_value_out;
+                p2_reset_n <= 1;
+            end
+            /* reset the ram pointer of both players */
             default: begin
                 p1_addr <= 1'b0;
                 p2_addr <= 1'b0;
@@ -179,29 +198,31 @@ module main(
         .user_input(user_input),
         .next_input(next_input),
         .done_input(done_input),
-        .resetn(resetn),
-        .q(p1_value),
-        .write(p1_write)
+        .resetn(p1_reset_n),
+        .q(p1_value)
         );
 
     ram32x10 ram0(
         .address(ram_addr),
         .clock(ram_clock),
-        .data(p1_value),
+        .data(player1_value),
         .wren(rwen),
         .q(p1_value_out)
         );
+
+    wire [1:0] p2_correct;  // indicate whether player2's value is correct,
+                            // 01 = correct, 10 = incorrect, 00 = no input
+    wire p2_complete;       // indicate whether player2 has cracked
+                            // player1's current morse code
 
     player2 player2_0(
         .clock(p2_clock),
         .user_input(user_input),
         .next_input(next_input),
         .done_input(done_input),
-        .resetn(resetn),
-        .p1_value(p1_value_out),
+        .resetn(p2_reset_n),
+        .p1_value(p2_compare_value),
         .correct(p2_correct),
-        .complete(p2_complete),
-        .read(p2_read),
         .q(p2_value)
         );
 
@@ -211,13 +232,13 @@ module main(
     assign LEDG[6:5] = p2_correct;
     assign LEDG[4] = abcd_kyle_signal;
 
-    /* output to LEDR of user input */
+    /* output to LEDR of cumulative user input */
     reg [9:0] ledr_value;
     assign LEDR[9:0] = ledr_value;
     always @(*) begin
         case (current_state)
             S_P1TURN:   ledr_value <= p1_value;
-            S_P2TURN:   ledr_value <= p2_value;
+            S_P2TURN:   ledr_value <= p1_value_out;
             default:    ledr_value <= 10'b1111_1111_11;
         endcase
     end
@@ -227,6 +248,7 @@ module main(
         current_state <= next_state;
     end
 
+    /* ------------ VGA ------------ */
     reg vga_correct_hold;
     always @(posedge abcd_kyle_signal) begin
         vga_correct_hold <= p2_correct[0];
@@ -237,10 +259,10 @@ module main(
     wire draw_full_box;
 
     translator trans0(
-        .correct(vga_correct_hold),     // 1bit, 1 if user input matches, 0 otherwise
-        .signal(user_input),	// signal to refresh/redraw... Automatically moves to next
-        .columns(p1_addr),              // 6bit, binary of number of columns in code
-        .selection(p2_value[1:0]),      // 2bit, 00 for emtpy, 01 for dot, 11 for slash
+        .correct(vga_correct_hold), // 1bit, 1 if user input matches, 0 otherwise
+        .signal(abcd_kyle_signal),  // signal to refresh/redraw... Automatically moves to next
+        .columns(p1_addr),          // 6bit, binary of number of columns in code
+        .selection(p2_value[1:0]),  // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
         .Y(y),
         .colour(colour),
@@ -249,15 +271,15 @@ module main(
         );
 
     rate_divider rate2(
-	    // input
-	    .clock_in(CLOCK_50),
-	    .rate(28'b00011_00101_10111_00110_110),
-	
-	    // output
-	    .clock_out(refresh)
-	    );
-	
-    reg h; 
+        // input
+        .clock_in(CLOCK_50),
+        .rate(28'b00011_00101_10111_00110_110),
+    
+        // output
+        .clock_out(refresh)
+        );
+    
+    reg h;
     always @(posedge refresh) begin
         if (h)
             h <= 1'b0;
@@ -273,15 +295,16 @@ module main(
         .x_in(x),
         .y_in(y),
         .resetn(~game_over),
-        .VGA_CLK(VGA_CLK),        //____VGA Clock
-        .VGA_HS(VGA_HS),            //____VGA H_SYNC
-        .VGA_VS(VGA_VS),            //____VGA V_SYNC
-        .VGA_BLANK_N(VGA_BLANK_N),  //____VGA BLANK
-        .VGA_SYNC_N(VGA_SYNC_N),    //____VGA SYNC
-        .VGA_R(VGA_R),              //____VGA Red[9:0]
-        .VGA_G(VGA_G),              //____VGA Green[9:0]
-        .VGA_B(VGA_B)  
+        .VGA_CLK(VGA_CLK),          //  VGA Clock
+        .VGA_HS(VGA_HS),            //  VGA H_SYNC
+        .VGA_VS(VGA_VS),            //  VGA V_SYNC
+        .VGA_BLANK_N(VGA_BLANK_N),  //  VGA BLANK
+        .VGA_SYNC_N(VGA_SYNC_N),    //  VGA SYNC
+        .VGA_R(VGA_R),              //  VGA Red[9:0]
+        .VGA_G(VGA_G),              //  VGA Green[9:0]
+        .VGA_B(VGA_B)
         );
+        defparam tummy0.BACKGROUND_IMAGE = "../res/spybackground.mif";
     
 endmodule
 
