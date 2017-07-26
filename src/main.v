@@ -56,7 +56,7 @@ module main(
     output  [6:0]   HEX0, HEX2, HEX3, HEX4;
 
 
-    /* Constants */
+    /* Clock rate constants */
     localparam  ONE_HZ = 28'b0010111110101111000010000000,
                 TWO_HZ = 28'd25000000;
 
@@ -67,11 +67,11 @@ module main(
     wire resetn     = KEY[3];
     wire clock      = CLOCK_50;
 
-    /* 1Hz clock using a rate divider */
-    wire clock_1hz;
+    /* 2Hz clock using a rate divider */
+    wire clock_2hz;
     rate_divider rate0(
         .clock_in(clock),
-        .clock_out(clock_1hz),
+        .clock_out(clock_2hz),
         .rate(TWO_HZ)
         );
 
@@ -104,7 +104,7 @@ module main(
     /* morse code visual for user on LEDG */
     reg [2:0] input_mem;
     assign LEDG[2:0] = input_mem;
-    always @(posedge clock_1hz) begin
+    always @(posedge clock_2hz) begin
         /* no user input */
         if (user_input)
             input_mem <= 3'b0;
@@ -126,8 +126,8 @@ module main(
     /* p1_clock and p2_clock are only active during their respective
      * machine states
      */
-    assign p1_clock = (current_state == S_P1TURN) ? clock_1hz : 1'b0;
-    assign p2_clock = (current_state == S_P2TURN) ? clock_1hz : 1'b0;
+    assign p1_clock = (current_state == S_P1TURN) ? clock_2hz : 1'b0;
+    assign p2_clock = (current_state == S_P2TURN) ? clock_2hz : 1'b0;
     /* enable write to ram only during player1's turn */
     assign rwen     = (current_state == S_P1TURN) ? p1_write : 1'b0;
 
@@ -136,7 +136,7 @@ module main(
 
     wire    [9:0]   p1_value;       // input value of player1 to be stored in ram
     wire    [9:0]   p1_value_out;   // value out from ram
-    wire    [1:0]   p2_value;       // input value of player2
+    wire    [9:0]   p2_value;
 
     /* indicate whether player2's current input is correct
      * and whether the entirety of player2's morse code is correct
@@ -164,14 +164,14 @@ module main(
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
     always @(posedge ram_clock) begin
-        if (current_state == S_START) begin
-            p1_addr <= 1'b0;
-            p2_addr <= 1'b0;
-        end
-        else if (current_state == S_P1TURN)
-            p1_addr <= p1_addr + 1'b1;
-        else if (current_state == S_P2TURN)
-            p2_addr <= p2_addr + 1'b1;
+        case (current_state)
+            S_P1TURN:   p1_addr <= p1_addr + 1'b1;
+            S_P2TURN:   p2_addr <= p2_addr + 1'b1;
+            default: begin
+                p1_addr <= 1'b0;
+                p2_addr <= 1'b0;
+            end
+        endcase
     end
 
     player1 player1_0(
@@ -202,7 +202,7 @@ module main(
         .correct(p2_correct),
         .complete(p2_complete),
         .read(p2_read),
-        .q(LEDR[17:10])
+        .q(p2_value)
         );
 
     /* signal from player2 to draw to vga */
@@ -211,22 +211,25 @@ module main(
     assign LEDG[6:5] = p2_correct;
     assign LEDG[4] = abcd_kyle_signal;
 
+    /* output to LEDR of user input */
     reg [9:0] ledr_value;
-
+    assign LEDR[9:0] = ledr_value;
     always @(*) begin
-        if (current_state == S_P1TURN)
-            ledr_value <= p1_value;
-        else if (current_state == S_P2TURN)
-            ledr_value <= p1_value_out;
-        else
-            ledr_value <= 10'b1111_1111_11;
+        case (current_state)
+            S_P1TURN:   ledr_value <= p1_value;
+            S_P2TURN:   ledr_value <= p2_value;
+            default:    ledr_value <= 10'b1111_1111_11;
+        endcase
     end
 
-    assign LEDR[9:0] = ledr_value;
-
     /* current_state registers */
-    always@(posedge clock_1hz) begin: state_FFs
+    always @(posedge clock_2hz) begin: state_FFs
         current_state <= next_state;
+    end
+
+    reg vga_correct_hold;
+    always @(posedge abcd_kyle_signal) begin
+        vga_correct_hold <= p2_correct[0];
     end
 
     wire [7:0] x,y;
@@ -234,10 +237,10 @@ module main(
     wire draw_full_box;
 
     translator trans0(
-        .correct(p2_correct[0]),     // 1bit, 1 if user input matches, 0 otherwise
-        .signal(abcd_kyle_signal),      // signal to refresh/redraw... Automatically moves to next
-        .columns(p1_addr),     // 6bit, binary of number of columns in code
-        .selection(p2_value[1:0]),   // 2bit, 00 for emtpy, 01 for dot, 11 for slash
+        .correct(vga_correct_hold),     // 1bit, 1 if user input matches, 0 otherwise
+        .signal(user_input),	// signal to refresh/redraw... Automatically moves to next
+        .columns(p1_addr),              // 6bit, binary of number of columns in code
+        .selection(p2_value[1:0]),      // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
         .Y(y),
         .colour(colour),
@@ -269,7 +272,7 @@ module main(
         .draw(h),
         .x_in(x),
         .y_in(y),
-        .resetn(1'b0),
+        .resetn(~game_over),
         .VGA_CLK(VGA_CLK),        //____VGA Clock
         .VGA_HS(VGA_HS),            //____VGA H_SYNC
         .VGA_VS(VGA_VS),            //____VGA V_SYNC
