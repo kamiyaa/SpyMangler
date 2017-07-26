@@ -8,7 +8,6 @@ module player2(
     clock,
     user_input,
     next_input,
-    done_input,
     resetn,
     p1_value,
 
@@ -21,7 +20,6 @@ module player2(
     input clock;            // clock
     input user_input;       // data in from user
     input next_input;       // indicate next input
-    input done_input;       // indicate user is done with input
     input resetn;           // reset current input
     input [9:0] p1_value;   // player1's value
 

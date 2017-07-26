@@ -26,14 +26,14 @@ module main(
     HEX4,
 
     /* VGA outputs */
-    VGA_CLK,        //    VGA Clock
-    VGA_HS,         //    VGA H_SYNC
-    VGA_VS,         //    VGA V_SYNC
-    VGA_BLANK_N,    //    VGA BLANK
-    VGA_SYNC_N,     //    VGA SYNC
-    VGA_R,          //    VGA Red[9:0]
-    VGA_G,          //    VGA Green[9:0]
-    VGA_B           //    VGA Blue[9:0]
+    VGA_CLK,
+    VGA_HS,
+    VGA_VS,
+    VGA_BLANK_N,
+    VGA_SYNC_N,
+    VGA_R,
+    VGA_G,
+    VGA_B
     );
 
     // Do not change the following outputs
@@ -130,7 +130,7 @@ module main(
     /* current address pointer of ram for the game */
     wire [3:0]  ram_addr = player1_turn ? p1_addr : p2_addr;
 
-    /* visual for memory address of player1 and player2 */
+    /* show memory address of player1 and player2, for visuals */
     hex_decoder hex2(
         .hex_digit(p1_addr),
         .segments(HEX2)
@@ -144,21 +144,21 @@ module main(
         .segments(HEX4)
         );
 
-    reg ram_clock;  // clock signal for ram to read/write from/to ram
-    reg rwen;       // read/write ram parameter, 0 = read, 1 = write
 
-    wire [9:0]  p1_value;           // input value by player1
-    reg [9:0]   player1_value;      // reg to hold player1's input
-    wire [9:0]  p1_value_out;       // player1's value out from ram
-    wire [9:0]  p2_value;           // input value of player2
-    reg [9:0]   p2_compare_value;   // value player2 must compare with
+    wire    [9:0]   p1_value;           // input value by player1
+    wire    [9:0]   p2_value;           // input value of player2
+    wire    [9:0]   p1_value_out;       // player1's value out from ram
+    reg     [9:0]   player1_value;      // reg to hold player1's input
+    reg     [9:0]   p2_compare_value;   // value player2 must compare with
 
     reg p1_reset_n; // reset for player1
     reg p2_reset_n; // reset for player2
+    reg ram_clock;  // clock signal for ram to read/write from/to ram
+    reg rwen;       // read/write ram parameter, 0 = read, 1 = write
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
-    always @(posedge ~next_input) begin
+    always @(negedge next_input) begin
         rwen <= 0;
         ram_clock <= 0;
         p1_reset_n <= 0;
@@ -193,11 +193,14 @@ module main(
         endcase
     end
 
+    /* module representing player1 that
+     * controls taking in morse code input, storing them
+     * and outputting them
+     */
     player1 player1_0(
-        .clock(p1_clock),
-        .user_input(user_input),
-        .next_input(next_input),
-        .done_input(done_input),
+        .clock(p1_clock),           // clock for player1
+        .user_input(user_input),    // input device for player1
+        .next_input(next_input),    // input device indicating next morse sequence
         .resetn(p1_reset_n),
         .q(p1_value)
         );
@@ -210,16 +213,17 @@ module main(
         .q(p1_value_out)
         );
 
-    wire [1:0] p2_correct;  // indicate whether player2's value is correct,
-                            // 01 = correct, 10 = incorrect, 00 = no input
-    wire p2_complete;       // indicate whether player2 has cracked
-                            // player1's current morse code
+    /* indicate whether player2's value is correct,
+     * 01 = correct, 10 = incorrect, 00 = no input
+     */
+    wire [1:0] p2_correct;
+    /* indicate whether player2 has cracked player1's current morse code */
+    wire p2_complete;
 
     player2 player2_0(
         .clock(p2_clock),
         .user_input(user_input),
         .next_input(next_input),
-        .done_input(done_input),
         .resetn(p2_reset_n),
         .p1_value(p2_compare_value),
         .correct(p2_correct),
@@ -227,10 +231,11 @@ module main(
         );
 
     /* signal from player2 to draw to vga */
-    wire abcd_kyle_signal = (p2_correct != 2'b00);
-    assign LEDG[7] = p2_complete;
-    assign LEDG[6:5] = p2_correct;
-    assign LEDG[4] = abcd_kyle_signal;
+    wire abcd_kyle_signal = ~next_input;
+
+    // wire abcd_kyle_signal = (p2_correct != 2'b00);
+    assign LEDG[7]      = p2_complete;
+    assign LEDG[6:5]    = p2_correct;
 
     /* output to LEDR of cumulative user input */
     reg [9:0] ledr_value;
@@ -238,7 +243,7 @@ module main(
     always @(*) begin
         case (current_state)
             S_P1TURN:   ledr_value <= p1_value;
-            S_P2TURN:   ledr_value <= p1_value_out;
+            S_P2TURN:   ledr_value <= p2_value;
             default:    ledr_value <= 10'b1111_1111_11;
         endcase
     end
@@ -274,17 +279,13 @@ module main(
         // input
         .clock_in(CLOCK_50),
         .rate(28'b00011_00101_10111_00110_110),
-    
         // output
         .clock_out(refresh)
         );
-    
+
     reg h;
     always @(posedge refresh) begin
-        if (h)
-            h <= 1'b0;
-        else
-            h <= 1'b1;
+        h <= ~h;
     end
 
     tumbler_vga tummy0(

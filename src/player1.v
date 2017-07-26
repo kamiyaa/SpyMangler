@@ -8,7 +8,6 @@ module player1(
     clock,
     user_input,
     next_input,
-    done_input,
     resetn,
 
     /* outputs */
@@ -18,7 +17,6 @@ module player1(
     input clock;            // clock
     input user_input;       // data in from user
     input next_input;       // indicate next input (next character)
-    input done_input;       // indicate user is done with input
     input resetn;           // reset current input
 
     output [9:0] q;         // player1's value
