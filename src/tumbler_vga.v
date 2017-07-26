@@ -70,7 +70,7 @@ module tumbler_vga(
         defparam VGA.RESOLUTION = "160x120";
         defparam VGA.MONOCHROME = "FALSE";
         defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
-        defparam VGA.BACKGROUND_IMAGE = "../src/spybackground.mif";
+        defparam VGA.BACKGROUND_IMAGE = "../res/spybackground.mif";
 
     wire draw, draw_full;
 
