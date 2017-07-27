@@ -9,8 +9,8 @@ module translator(correct, signal, columns, selection, X, Y, colour, draw_full, 
 	reg [4:0] row, column;
 	
 	always @(*) begin
-		X <= (column*10)+20;
-		Y <= (row*4)+30;
+		X <= (column*9)+20;
+		Y <= (row*8)+30;
 	end
 
 	always @(posedge signal, negedge reset) begin
