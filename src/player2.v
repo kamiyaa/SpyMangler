@@ -7,7 +7,6 @@ module player2(
     // input
     clock,
     user_input,
-    next_input,
     resetn,
     p1_value,
 
@@ -19,13 +18,12 @@ module player2(
 
     input clock;            // clock
     input user_input;       // data in from user
-    input next_input;       // indicate next input
     input resetn;           // reset current input
     input [9:0] p1_value;   // player1's value
 
     output complete;        // whether player2 cracked player1's code or not.
     output [9:0] q;         // player2's value
-    output [1:0] correct;
+    output [1:0] correct;   // indicate whether player2 input is correct ot not.
 
     /* player2's value */
     reg [9:0] p2_value;

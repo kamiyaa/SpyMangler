@@ -26,7 +26,7 @@ module tumbler_vga(
     VGA_B           //  VGA Blue[9:0]
     );
     /* parameter passed in indicating the .mif file to load */
-    parameter BACKGROUND_IMAGE = "background.mif";
+    parameter BACKGROUND_IMAGE = "../res/spybackground.mif";
 
     input clock;        //  50 MHz expected
     input [2:0] colour_in;
@@ -150,7 +150,7 @@ module control(clock, go, in_x, in_y, in_c, full, reset, x, y, c, print);
             if (clcol == 1'b1) begin
                 c <= 3'b0;
                 // draw black along the column
-                if (col == 10'b1111111111) begin
+                if (col == 10'b0101011011) begin
                     clcol = 1'b0;
                     col = 10'b0;
                     c <= in_c;
@@ -180,7 +180,7 @@ module control(clock, go, in_x, in_y, in_c, full, reset, x, y, c, print);
         else begin
             if (clcol == 1'b1) begin
                 x <= in_x+col[1:0];
-                y <= col[9:3];
+                y <= col[9:3] + 30;
             end
             else begin
                 x <= in_x+offset[3:2];

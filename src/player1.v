@@ -7,7 +7,6 @@ module player1(
     /* inputs */
     clock,
     user_input,
-    next_input,
     resetn,
 
     /* outputs */
@@ -16,7 +15,6 @@ module player1(
 
     input clock;            // clock
     input user_input;       // data in from user
-    input next_input;       // indicate next input (next character)
     input resetn;           // reset current input
 
     output [9:0] q;         // player1's value
@@ -48,11 +46,13 @@ module player1(
             p1_value <= 10'b0;
         end
         // concatentate dot binary to player2's input value
-        else if (ld_dot)
+        else if (ld_dot) begin
             p1_value <= { p1_value[7:0], MORSE_DOT };
+        end
         // concatentate line binary to player2's input value
-        else if (ld_line)
+        else if (ld_line) begin
             p1_value <= { p1_value[7:0], MORSE_LINE };
+        end
     end
     assign q = p1_value;
 endmodule

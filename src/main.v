@@ -116,8 +116,8 @@ module main(
     end
 
     /* wires indicating turns */
-    wire player1_turn   = (current_state == S_P1TURN);
     wire game_over      = (current_state == S_RESULT);
+    wire player1_turn   = (current_state == S_P1TURN);
 
     /* clocks for player1 and player2 module that controls when they are active */
     wire p1_clock       = player1_turn ? clock_2hz : 1'b0;
@@ -144,21 +144,20 @@ module main(
         .segments(HEX4)
         );
 
-
     wire    [9:0]   p1_value;           // input value by player1
     wire    [9:0]   p2_value;           // input value of player2
     wire    [9:0]   p1_value_out;       // player1's value out from ram
     reg     [9:0]   player1_value;      // reg to hold player1's input
     reg     [9:0]   p2_compare_value;   // value player2 must compare with
 
-    reg p1_reset_n; // reset for player1
-    reg p2_reset_n; // reset for player2
-    reg ram_clock;  // clock signal for ram to read/write from/to ram
-    reg rwen;       // read/write ram parameter, 0 = read, 1 = write
+    reg p1_reset_n;     // reset for player1
+    reg p2_reset_n;     // reset for player2
+    reg ram_clock;      // clock signal for ram to read/write from/to ram
+    reg rwen;           // read/write ram parameter, 0 = read, 1 = write
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
-    always @(negedge next_input) begin
+    always @(posedge ~next_input) begin
         rwen <= 0;
         ram_clock <= 0;
         p1_reset_n <= 0;
@@ -198,18 +197,21 @@ module main(
      * and outputting them
      */
     player1 player1_0(
+        /* inputs */
         .clock(p1_clock),           // clock for player1
         .user_input(user_input),    // input device for player1
-        .next_input(next_input),    // input device indicating next morse sequence
         .resetn(p1_reset_n),
+        /* outputs */
         .q(p1_value)
         );
 
     ram32x10 ram0(
+        /* inputs */
         .address(ram_addr),
         .clock(ram_clock),
         .data(player1_value),
         .wren(rwen),
+        /* outputs */
         .q(p1_value_out)
         );
 
@@ -221,12 +223,14 @@ module main(
     wire p2_complete;
 
     player2 player2_0(
+        /* inputs */
         .clock(p2_clock),
         .user_input(user_input),
-        .next_input(next_input),
         .resetn(p2_reset_n),
         .p1_value(p2_compare_value),
+        /* outputs */
         .correct(p2_correct),
+        .complete(p2_complete),
         .q(p2_value)
         );
 
@@ -265,7 +269,7 @@ module main(
 
     translator trans0(
         .correct(vga_correct_hold), // 1bit, 1 if user input matches, 0 otherwise
-        .signal(abcd_kyle_signal),  // signal to refresh/redraw... Automatically moves to next
+        .signal(~next_input),       // signal to refresh/redraw... Automatically moves to next
         .columns(p1_addr),          // 6bit, binary of number of columns in code
         .selection(p2_value[1:0]),  // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),
