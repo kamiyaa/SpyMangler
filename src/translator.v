@@ -9,7 +9,7 @@ module translator(correct, signal, columns, selection, X, Y, colour, draw_full, 
 	reg [4:0] row, column;
 	
 	always @(*) begin
-		X <= (column*9)+28;
+		X <= (column*11)+28;
 		Y <= (row*8)+30;
 	end
 
