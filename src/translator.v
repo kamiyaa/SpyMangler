@@ -1,5 +1,6 @@
-module translator(correct, signal, columns, selection, X, Y, colour, draw_full, reset);
-	input correct, signal, reset;
+module translator(correct, columns, selection, X, Y, colour, draw_full, reset);
+	input [1:0] correct;
+	input reset;
 	input [5:0] columns;
 	input [1:0] selection;
 	output reg [7:0] X,Y;
@@ -13,16 +14,21 @@ module translator(correct, signal, columns, selection, X, Y, colour, draw_full, 
 		Y <= (row*8)+30;
 	end
 
+	wire signal;
+	assign signal = (correct != 2'b00);
+	reg [1:0] correct_reg;
+
 	always @(posedge signal, negedge reset) begin
+		correct_reg <= correct;
 		if (reset == 1'b0) begin 
 			column <= 0;
 			row <= 0;
 		end
-		else if (correct && row == 5'b00100) begin
+		else if (correct_reg == 2'b01 && row == 5'b00100) begin
 			row <= 5'b0;
 			column <= column + 1'b1;
 		end
-		else if (correct)
+		else if (correct_reg == 2'b01)
 			row <= row + 1'b1;
 		else
 			row <= 5'b0;

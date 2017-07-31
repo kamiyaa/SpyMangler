@@ -147,21 +147,19 @@ module main(
     wire    [9:0]   p1_value;           // input value by player1
     wire    [9:0]   p2_value;           // input value of player2
     wire    [9:0]   p1_value_out;       // player1's value out from ram
+    wire p1_write;
+    wire p2_read;
     reg     [9:0]   player1_value;      // reg to hold player1's input
     reg     [9:0]   p2_compare_value;   // value player2 must compare with
 
-    reg p1_reset_n;     // reset for player1
-    reg p2_reset_n;     // reset for player2
-    reg ram_clock;      // clock signal for ram to read/write from/to ram
-    reg rwen;           // read/write ram parameter, 0 = read, 1 = write
+    /* read/write ram parameter, 0 = read, 1 = write */
+    wire rwen = SW[1];
+    // clock signal for ram to read/write from/to ram
+    wire ram_clock = (current_state == S_P1TURN) ? p1_write : SW[0];
 
     /* control player1 and player2's memory pointer position */
     /* control current memory address pointer of game */
-    always @(posedge ~next_input) begin
-        rwen <= 0;
-        ram_clock <= 0;
-        p1_reset_n <= 0;
-        p2_reset_n <= 0;
+    always @(posedge ram_clock) begin
         case (current_state)
             /* store player1's input into register,
              * increment player1's ram pointer to new space,
@@ -170,9 +168,6 @@ module main(
             S_P1TURN: begin
                 player1_value <= p1_value;
                 p1_addr <= p1_addr + 1'b1;
-                rwen <= 1;
-                ram_clock <= 1;
-                p1_reset_n <= 1;
             end
             /* increment player2's ram pointer to new space,
              * start the ram clock to receive a value and
@@ -180,9 +175,7 @@ module main(
              */
             S_P2TURN: begin
                 p2_addr <= p2_addr + 1'b1;
-                ram_clock <= 1;
                 p2_compare_value <= p1_value_out;
-                p2_reset_n <= 1;
             end
             /* reset the ram pointer of both players */
             default: begin
@@ -200,15 +193,16 @@ module main(
         /* inputs */
         .clock(p1_clock),           // clock for player1
         .user_input(user_input),    // input device for player1
-        .resetn(p1_reset_n),
+        .next_input(~next_input),
         /* outputs */
+        .write(p1_write),
         .q(p1_value)
         );
 
     ram32x10 ram0(
         /* inputs */
         .address(ram_addr),
-        .clock(ram_clock),
+        .clock(SW[0]),
         .data(player1_value),
         .wren(rwen),
         /* outputs */
@@ -226,20 +220,23 @@ module main(
         /* inputs */
         .clock(p2_clock),
         .user_input(user_input),
-        .resetn(p2_reset_n),
+        .next_input(~next_input),
         .p1_value(p2_compare_value),
         /* outputs */
+        .read(p2_read),
         .correct(p2_correct),
         .complete(p2_complete),
         .q(p2_value)
         );
 
     /* signal from player2 to draw to vga */
-    wire abcd_kyle_signal = ~next_input;
+    wire abcd_kyle_signal = (current_state == S_P1TURN) && user_input;
 
     // wire abcd_kyle_signal = (p2_correct != 2'b00);
     assign LEDG[7]      = p2_complete;
     assign LEDG[6:5]    = p2_correct;
+    assign LEDR[17]     = rwen;
+	 assign LEDR[16:10]  = p2_value;
 
     /* output to LEDR of cumulative user input */
     reg [9:0] ledr_value;
@@ -247,7 +244,7 @@ module main(
     always @(*) begin
         case (current_state)
             S_P1TURN:   ledr_value <= p1_value;
-            S_P2TURN:   ledr_value <= p2_value;
+            S_P2TURN:   ledr_value <= p2_compare_value;
             default:    ledr_value <= 10'b1111_1111_11;
         endcase
     end
@@ -268,8 +265,7 @@ module main(
     wire draw_full_box;
 
     translator trans0(
-        .correct(vga_correct_hold), // 1bit, 1 if user input matches, 0 otherwise
-        .signal(~next_input),       // signal to refresh/redraw... Automatically moves to next
+        .correct(p2_correct), // 1bit, 1 if user input matches, 0 otherwise
         .columns(p1_addr),          // 6bit, binary of number of columns in code
         .selection(p2_value[1:0]),  // 2bit, 00 for emtpy, 01 for dot, 11 for slash
         .X(x),

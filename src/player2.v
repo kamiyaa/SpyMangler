@@ -7,10 +7,11 @@ module player2(
     // input
     clock,
     user_input,
-    resetn,
+    next_input,
     p1_value,
 
     // output
+    read,
     complete,
     correct,
     q
@@ -18,10 +19,11 @@ module player2(
 
     input clock;            // clock
     input user_input;       // data in from user
-    input resetn;           // reset current input
+    input next_input;       // address of player2
     input [9:0] p1_value;   // player1's value
 
     output complete;        // whether player2 cracked player1's code or not.
+    output reg read;
     output [9:0] q;         // player2's value
     output [1:0] correct;   // indicate whether player2 input is correct ot not.
 
@@ -37,19 +39,19 @@ module player2(
     reg [1:0] user_result;
 
     /* finite states */
-    localparam  MORSE_NONE  = 2'b00,
-                MORSE_DOT   = 2'b01,
-                MORSE_LINE  = 2'b11 ;
+    localparam  MORSE_NONE  = 2'b00,    // binary indicating nothing
+                MORSE_DOT   = 2'b01,    // binary indicating a morse dot
+                MORSE_LINE  = 2'b11 ;   // binary indicating a morse line
 
-    localparam  NEUTRAL     = 2'b00,
-                CORRECT     = 2'b01,
-                INCORRECT   = 2'b10 ;
+    localparam  NEUTRAL     = 2'b00,    // neutral state where player2 is not inputting
+                CORRECT     = 2'b01,    // player2's input is correct
+                INCORRECT   = 2'b10 ;   // player2's input is incorrect
 
     /* module to take in input and convert to morse code */
     morse_decoder morse2(
         .clock(clock),
         .user_input(user_input),
-        .resetn(resetn),
+        .resetn(1'b0),
         .ld_dot(ld_dot),
         .ld_line(ld_line)
         );
@@ -58,8 +60,13 @@ module player2(
      * existing morse code */
     always @(posedge clock) begin
         user_result <= NEUTRAL;
-        if (resetn) begin
+        if (read) begin
+            read <= 1'b0;
+            p1_copy <= p1_value;
             p2_value <= 10'b0;
+        end
+        else if (next_input) begin
+            read <= 1'b1;
         end
         /* morse code segment is empty */
         else if (p1_copy[9:8] == 2'b00) begin
