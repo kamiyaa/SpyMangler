@@ -8,6 +8,8 @@
 `include "ram32x10.v"
 `include "translator.v"
 
+/* main module */
+/* includes instances of all other used modules */
 module main(
     /* clock input */
     CLOCK_50,
@@ -306,6 +308,5 @@ module main(
         .VGA_B(VGA_B)
         );
         defparam tummy0.BACKGROUND_IMAGE = "../res/spybackground.mif";
-    
-endmodule
 
+endmodule

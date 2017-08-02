@@ -3,6 +3,10 @@
 
 `include "morse_decoder.v"
 
+/* player 1 module */
+/* Given user input and the morse decoder file, the module does
+calculations based on p1 inputs and gives this information to
+the LEDR0-9 indicator lights and stores in RAM file */
 module player1(
     /* inputs */
     clock,

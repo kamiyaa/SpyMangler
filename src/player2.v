@@ -3,6 +3,10 @@
 
 `include "player1.v"
 
+/* player 2 module */
+/* Given user input and the player 1 file(values), the module sees
+if user input matches player 1's values. And decides appriopriate
+output based on that*/
 module player2(
     // input
     clock,
@@ -112,4 +116,3 @@ module player2(
     assign complete = clock ? (p2_value == p1_value) : 1'b0;
     assign q = p2_value;
 endmodule
-
