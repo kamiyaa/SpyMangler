@@ -1,6 +1,11 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
+/* morse decoder module */
+/* This module is what controls the LEDG0-3 lights that indicate
+if player 1 is going to input a line, dot, or nothing based on how
+long KEY0 is held. Outputs if player inputted a line or dot or nothing
+and gives that data to player1.v for it to concatentate values.  */
 module morse_decoder(
     // Inputs
     clock,

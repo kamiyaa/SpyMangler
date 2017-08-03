@@ -1,159 +1,185 @@
 CSCB58 Project File: Summer 2017
+Project Details
+---------------
+Team Name: Aloha Snackbar
 
 Project Title: SpyMangler
 
 Simple Project Description: Two players that work together to successfully encrypt/decrypt each other’s messages with “random elements” added to each level they progress through.
 
-ORIGINAL DESCRIPTION
-——————————————————————————————————————————————————————————————————————
-For every letter, there is a pin-tumbler that goes from up to down at a variable descend. In the case of the morse code, the pin will become blue if there is a rectangle, green if there is a not, and will remain red if there is nothing.
-Example, Morse Code Letter [L] = dot,rectangle,dot,dot,nothing -> G,B,G,G,R
 
-In CASUAL(lvl 1-6), the player is given the morse code translations and attempts to solve the mystery word letter by letter. Time is limited and the number of letters to translate increases as the level progresses
+PLAYER OBJECTIVES AND HOW TO WIN
+——————————————————————————————————————
+PLAYER 1 OBJECTIVE: You play as a WWII British Spy in Casablanca that uses the “morse code” to send encrypted German lock codes to a friendly receiver in Britain.
+note: to make the game easier, player1 should think of an input password thats “intuitive” to player 2, for example if player 2 was Dr. Harrington, I would choose the password to be “MANGLER”, this way Harrington would have the intuition to guess the password midway through.
 
-In ENIGMA(lvl 7-10), the player is given some rough code translations with a somewhat recognizable pattern for letters A-Z and 1-9. In other words, if you are given the translation for A,C,D,G you could probably find all letters A-G as well.
+PLAYER 2 OBJECTIVES: You play as a WWII receiver that receives morse code from a friendly spy and tries to decode the password by navigating through key-tumbler locks. Based on the length of the password and the ability for player 2 to guess the password, player 1 and 2 should mutually agree on a suitable number of tries player 2 gets to successfully go through all key-tumbler locks before he loses.
+
+HOW TO WIN:
+Due to the open endedness of the game, we decided that its best for the two players to decide specifically who wins and loses.
+note: the variable x is up to the players to decide
+-player 1 wins if
+	-player 2 inputs the wrong values (line/dot/nothing) x times
+-player 2 wins if
+	-player 2 successfully goes through all key-tumblers without inputting the wrong values x times
 
 
-WEEK 1 REVISED DESCRIPTION
-——————————————————————————————————————————————————————————————————————
-Player1: Chooses any word to encrypt and inputs the number of letters in the word via the DE2 board switches. Then, a number pin-tumbler locks will come up based on the number of letters there are. Based on the morse code, the player will use rectangles and dots to encrypt the letter. There are four options here
-a) KEY0: Load (press 3 times for rectangle, press 1 time for dot, press 0 for nothing)
-b) KEY1: Go to the next letter
-c) KEY2: Go to the previous letter
-d) KEY3: Finish word
-After the word is complete, the encrypted message will be sent to player2 
+.README(INSTRUCTIONS TO PLAY) FOR PLAYER 1
+—————————————————————————————————————————————————
+PLAYER 1 DESCRIPTION: 
+Can encrypt any letter up to 10 letters, each letter corresponds to its own pin-tumbler lock. Player uses KEY0 to input a dot or line. The lines and dots inputted will be shown on the DE2 board using LEDR0-LEDR9. Since the max dots/lines for a single letter in the morse code is 5, every 2 LEDRs represent a dot/line, thus total of 10LEDRs shown. 11 = line, 01 = dot. During this process, values are stored in a 10x10 RAM(10 tumblers x 10 bits) so that player2 will be able to access these values later on.
 
-Player2: Tries to decrypt the word. For every letter, there is a pin-tumbler that will go up to the top if KEY0 is pressed. From there, it goes descends at a fixed pace downwards. If the pin-tumbler turns green for 2 seconds=>its a rectangle, quick flash=> its a dot. Player can then go to the morse code index to find out the encrypted word. The four options here are,
-a) KEY0: Ascend the pin-tumbler to the top, will descend automatically
-b) KEY1: Go to the next letter
-c) KEY2: Go to the previous letter
-d) KEY3: Finish decrypting, go to answer stage
-Enter the decrypted message in binary, player 2 either wins or loses
 
-Further Intentions: For every level that the two players successfully progress through, there will be a “new element” added to each level to spice things up a notch. Currently drawing the blueprints for the “new elements”
-
-WEEK 2 DESCRIPTION
-——————————————————————————————————————————————————————————————————————
-Player1: Can encrypt any letter up to 32 letters, each letter corresponds to its own pin-tumbler lock. Player uses the PS2 keyboard to input the letter they want. The letter will show up on HEX1/HEX0 as a PS/2 scan code. During this process, the scan code is translated to an 8 bit input and will be stored in the 32x8 RAM. 
-nothing = 00, 01 = dot, 11 = line, default = 10, 
-eg. Input on PS/2 = F, F = 2B, 2B = dot dot line dot = 01011101
-eg. Input on PS/2 = U, U = 3C, 3C = dot dot line nothing = 01011100
-
-There are four options here
-a) KEY0:
-b) KEY1: Go to the next letter
-c) KEY2: Go to the previous letter
-d) KEY3: Finish word
-After the word is complete, the encrypted message will be sent to player2 
-
-Player2: Uses 
-
-Tries to decrypt the word. For every letter, there is a pin-tumbler that will go up to the top if KEY0 is pressed. From there, it goes descends at a fixed pace downwards. If the pin-tumbler turns green for 2 seconds=>its a rectangle, quick flash=> its a dot. Player can then go to the morse code index to find out the encrypted word. The four options here are,
-a) KEY0: Ascend the pin-tumbler to the top, will descend automatically
-b) KEY1: Go to the next letter
-c) KEY2: Go to the previous letter
-d) KEY3: Finish decrypting, go to answer stage
-Enter the decrypted message in binary, player 2 either wins or loses
-
-Further Intentions: For every level that the two players successfully progress through, there will be a “new element” added to each level to spice things up a notch. Currently drawing the blueprints for the “new elements”
-
-WEEK 3 DESCRIPTION
-——————————————————————————————————————————————————————————————————————
-Player1 Objective: A WWII British Spy in occupied Casablanca that uses the “morse code” to send encrypted German lock codes to a friendly spy back at the homeland.
-
-Player1 Description: Can encrypt any letter up to 10 letters, each letter corresponds to its own pin-tumbler lock. Player uses KEY0 to input a dot or line. The lines and dots inputted will be shown on the DE2 board using LEDR0-LEDR9. During this process, values are stored in a 10x10 RAM(10 tumblers x 10 bits) so that player2 will be able to access these values. 
-
-Player1 Input Options:
-a) KEY0: Load letter(Press and hold for 3 sec = line, press for 1 sec = dot, press nothing for nothing. On the LEDR, line = 11, dot = 01, nothing = 00)
-b) KEY1: Go to the next letter
+PLAYER 1 INPUT OPTIONS:
+a) KEY0: Load letter(tumbler)
+remark1,Press and hold for 3 sec = line, press for 1 sec = dot, press nothing for nothing
+remark2,On the LEDR, line = 11, dot = 01, nothing = 00)
+b) KEY1: Go to the next letter(tumbler)
+remark1,HEX2 will show which tumbler the player is on
 c) KEY2: End turn
-d) KEY3: Reset the letter
-After the word is complete, the encrypted message will be sent to player2 
-
-Player1 Input Example: Want to encrypt the word “KAPPA”
-K = line dot line nothing nothing (LEDR: 1101110000)
-A = dot line nothing nothing nothing (LEDR: 0111000000)
-P = dot line line dot nothing (LEDR: 0111110100)
-P = dot line line dot nothing (LEDR: 0111110100)
-A = dot line nothing nothing nothing (LEDR: 0111000000)
-
-Player2 Objectives: Receives morse code from a friendly spy and tries to decode the message by navigating through n_number of key-tumbler locks. You didn’t think it was that easy did you? The German Gestapo have activated traps in the lock codes. If player 2 takes a long time(dependent on # of letters) to solve, or enters the wrong letter, a bomb will trigger and player 2 will be dead!
- 
-Player2 Description:  ———————— 
-Tries to decrypt the word. For every letter, there is a pin-tumbler that will go up to the top if KEY0 is pressed. From there, it goes descends at a fixed pace downwards. If the pin-tumbler turns green for 2 seconds=>its a rectangle, quick flash=> its a dot. Player can then go to the morse code index to find out the encrypted word.
-
-Player2 Input Options:  ———————— 
-a) KEY0: Ascend the pin-tumbler to the top, will descend automatically
-b) KEY1: Go to the next letter
-c) KEY2: Go to the previous letter
-d) KEY3: Finish decrypting, go to answer stage
-Enter the decrypted message in binary, player 2 either wins or loses
+remark1,HEX0 will display 2 once pressed, indicating it’s player2’s turn to decrypt all letters
+d) KEY3: Reset the indicators
+remark1, player should press this every time they switch to a different letter(tumbler)
+remark2, in the case that the player screws up the input press KEY3
 
 
-Player2 Input Example: ———————— 
+PLAYER 1 INPUT EXAMPLE: 
+Want to encrypt the word “KAPPA”, LEDRs will be inputed in the (<————) direction
 
-Further Intentions: For every level that the two players successfully progress through, there will be a “new element” added to each level to spice things up a notch. Currently drawing the blueprints for the “new elements”
+K = line dot line nothing nothing, however displayed as LEDR9-0: 00 00 11 01 11
+input -> KEY0(3), KEY0(1), KEY0(3), check indicator lights ok then, KEY1, KEY3
+
+A = dot line nothing nothing nothing, however displayed as LEDR9-0: 00 00 00 01 11
+input -> KEY0(1), KEY0(3), check indicator lights ok then, KEY1, KEY3
+
+P = dot line line dot nothing however displayed as LEDR9-0: 00 01 11 11 01
+input -> KEY0(1), KEY0(3), KEY0(3), KEY0(1), check indicator lights ok then, KEY1, KEY3
+
+P = dot line line dot nothing however displayed as LEDR9-0: 00 01 11 11 01
+input -> KEY0(1), KEY0(3), KEY0(3), KEY0(1), check indicator lights ok then, KEY1, KEY3
+
+A = dot line nothing nothing nothing, however displayed as LEDR9-0: 00 00 00 01 11
+input -> KEY0(1), KEY0(3), check indicator lights ok then, KEY1, KEY3
+
+lastly, KEY2 to end turn.
 
 
-Video URL:
+
+.README(INSTRUCTIONS TO PLAY) FOR PLAYER 2
+———————————————————————————————————————————————————
+PLAYER 2 DESCRIPTION: Decrypts the letters that player 1 encrypted. For the positions on the first key-tumbler, you must guess whether the position is a line, dot or nothing. Decrypting the first letter (key-tumbler) is completely based on luck. However after that, you can use intuition reveal the rest of the letters, very similar to wheel of fortune. To output the VGA display, scroll through KEY0 to output a red block(nothing), white block(dot) or unfilled white block(line). Then press KEY1 to go to the next letter. If your output is correct, then LEDR4 will flash green.
+
+hint: Always refer back to the morse code translator so you can make an educated guess on your output. This will minimize the number of times you output wrong values and perhaps give you “intuition” as to what the password is! After you’ve finished the 5th position on the key-tumbler, you will automatically go onto the next tumbler and so forth.
+
+PLAYER 2 OUTPUT OPTIONS
+a) KEY0: Load letter(tumbler)
+remark, red block = nothing, white block = dot, unfilled white block = line
+b) KEY1: Go to the next letter(tumbler)
+remark1, if output is wrong, there is no flash on LEDR4 and you do not move onto the next block on the key-tumbler. 
+remark2, if output is correct, there will be a green flash on LEDR4 and you will move onto the next block on the key-tumbler
+c) KEY2: End turn
+d) KEY3: Reset the indicators
+
+PLAYER 2 OUTPUT EXAMPLE: 
+Want to encrypt the word “xxxxx”(unknown word), assume they have a PH.D in memeology and thus has “intuition” of the word “KAPPA”(p1’s input)
+
+Try Output: filled white block(dot), Result: no LEDR4 flash, Next Step: current position must be unfilled white block
+*failed random guess, now we know for sure the position must be an unfilled white block(line)
+
+Try Output: unfilled white block(line), Result: LED4 flash, Next Step: try next position
+*educated guess by elimination
+
+Try Output: unfilled white block(line), Result: no LEDR4 flash, Next Step: position could be white/red block
+*random guess failed, next position could be white/red block
+
+Try Output: white block(dot), Result: LEDR4 flash, Next Step: try next position
+*random guess success
+
+Try Output: unfilled white block(line), Result: LEDR4 flash, Next Step: try next position
+*random guess success
+*at this point, based on the morse code the letter is either C(line,dot,line,line) or K(line,dot,line)
+
+Try Output: red block(nothing), Result: LEDR4 flash, Next Step: finished word, next key-tumbler
+*we’ve discovered the letter is K, move to next key-tumbler
+
+fast forward to when we have guessed the proceeding two key-tumblers, now we know half of the word stands at K A P x x, with two unknown “x”. Based on player 2 “intuition”, I made a guess that the word is KAPPA, which simplifies my process very much.
+
+
+
+SOURCE CODE + VIDEO PRESENTATION
+———————————————————————————————————————————————
+Video URL: https://youtu.be/JSC6bmjZg3o
 
 Code URL (please upload a copy of this file to your repository at the end of the project as well, it will
-serve as a useful resource for future development):
+serve as a useful resource for future development): www.github.com/Kamiyaa/SpyMangler
 
 
-Proposal
---------
 
-What do you plan to have completed by the end of the first lab session?:  ———————— 
+PROPOSAL
+————————————————————
+What do you plan to have completed by the end of the first lab session?:
 A:
-1) Made the background graphics, established CASUAL level codes to its translator.
-2) Work on the randomness of the words(will probably choose a random n-number word from a pool of n-number words.
-3) Finish the FSM configurations with each state going to what
+1) Made the background graphics
+2) Player 1 module
+3) Ps2 keyboard module
+4) Main module
+5) Hex decoder module
+6) Finish the FSM configurations/diagrams with each state going to what
 
-What do you plan to have completed by the end of the second lab session?:  ———————— 
+What do you plan to have completed by the end of the second lab session?:
 A:
-1) Begin work on ENIGMA, try to get simple patterns to work. Eg, given all letters except A,E,H. Figure out letters using a simple pattern, +1 dot every 3rd letter or a combination of x-num of dots and y-num of rectangles every x,y letter.
+2) Background graphics work perfectly, and is displayed on VGA display
+3) Make RAM module
+4) Player 2 module
+5) Continue work on Main module
+6) Morse translator module
 
-What do you plan to have completed by the end of the third lab session?:  ———————— 
+What do you plan to have completed by the end of the third lab session?:
 A: 
-1) Finish the ENIGMA difficulty with a fully working pattern generator
-2) Add some narrative to the game
-3) Improve graphics designs
+1) Continue work on Main module
+2) Tumbler VGA module
+3) Everything on DE2 board works perfectly, small bugs in Tumbler VGA is fine
 
 What is your backup plan if things don’t work out as planned?
 A: go on e-service, submit a petition for late withdrawal
 
 What hardware will you need beyond the DE2 board 
 (be sure to e-mail Brian if it’s anything beyond the basics to make sure there’s enough to go around)
-A: VGA
+A: VGA Display, that’s all!
 
 
-Motivations
------------
-How does this project relate to the material covered in CSCB58?:  ———————— 
-A: 
-1) Morse code will be used as a means of communication without a keyboard.
-2) FSM will be used to detect morse code, and be used throughout the game to indicate player turns and game state.
+
+MOTIVATIONS
+————————————————————
+How does this project relate to the material covered in CSCB58?: 
+A: 1) Morse code will be used as a means of communication, covered in labs
+2) PS/2 Keyboard has various pin assignments related to lab0 and overall structure of rewiring the DE2 board
+2) FSM will be used for morse code, and throughout the game to indicate player turns and game state, FSM will be everywhere in our game.
 3) RateDivider to change clock speeds for difficult levels and for morse code intervals.
 4) HEX as a means of visual feedback for users.
-5) registers, used to hold values and be operated upon
+5) Registers, used to hold values and be operated upon
 6) VGA adaptor/screen to make graphics
+7) RAM module, going beyond the course
 
-Why is this project interesting/cool (for CSCB58 students, and for non CSCB58 students?):  ———————— 
-A: Solving puzzles can be challenging and either results in a rewarding mood, or a frustrated one. Either way, players will find the ‘ENIGMA’ levels interesting as they are randomly generated to be solved. Similar to why people like watching wheel of fortune on TV. The sense of mystery eventually translates to interest.
+Why is this project interesting/cool (for CSCB58 students, and for non CSCB58 students?):  
+A: This game is unique in the sense that it allows 2 players to communicate through intuition. Player 1 putting in the word and after some hints, seeing if player 2 is able to guess out the word. I think it gives a sense of unique open-endedness that can’t be found on generic games such as pong, TRON and other retro games.
 
-Why did you personally choose this project?:  ———————— 
-A: Interested in the strategic side of things. So I wanted to see what strategies people employ to solve decryption problems. Not to mention the importance of code cracking in WW2.
+Why did you personally choose this project?: 
+A: I’ve always loved anything about spies and spy movies. So I thought it would be cool to make a “wheel of fortune” style encryption/decryption game. It’s also designed to be very open-ended to both players, which I admire as an important aspect of any game.
 
 
-Attributions  ———————— 
-------------
-Provide a complete list of any external resources your project used (attributions should also be included in your
-code).
+
+ATTRIBUTIONS 
+———————————————————
+Provide a complete list of any external resources your project used (attributions should also be included in your code).
  - Hex decoder from lab5
+ - RAM module from MODULE: altsyncram (File Name: ram32x4.v)
+ - VGA adapter from lab6 and other online resources
 
-Updates  ———————— 
--------
+
+
+UPDATES 
+———————————————————
 UPDATE 1: 07/02/17: Created Project Proposal
 UPDATE 2: 07/06/17:
  - We have a working module that takes user input and tell whether input is a line or dot in morse code.
@@ -163,3 +189,14 @@ UPDATE 2: 07/06/17:
 UPDATE 3: 07/13/17:
  - We tried to connect our player1 input using a PS/2 keyboard, however it doesn’t work and we reverted back to the original input methods
  - We made RAM memory storage to store inputs for player1 so that multiple inputs could be passed onto player2
+ - Upgraded VGA to its main function, however has some display bugs to sort out
+ - Worked on morse code translator further, got rid of some bugs
+UPDATE 4: 07/20/17:
+ - Redesigned the game to make it more achievable by the due date
+ - Progress on VGA somewhat stagnant, still working on bugs
+ - Tried to get RAM from player 1 input to VGA output, however failed, working on it over the weekend
+UPDATE 5: 07/27/17:
+ - DE2 board LEDR0-9 lights do not reset after going into a different key-tumbler (worked before but broke after some changes to code), however this was fixed during the 1 hour lab by pressing KEY3 to reset indicator lights each time
+ - All displays bugs fixed, VGA display working perfectly in conjunction with RAM storage
+ - Data flow problems fixed, data input and outputs moving smoothly according to diagram
+ - Successfully linked RAM for player 1 -> player 2 -> VGA output

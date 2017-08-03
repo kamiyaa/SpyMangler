@@ -1,10 +1,12 @@
 /* hex decoder */
-
+/* Copied from Lab5 part 2 starter code */
 module hex_decoder(hex_digit, segments);
     input [3:0] hex_digit;
     output reg [6:0] segments;
-   
+
+    // sensitive to any changes
     always @(*)
+        // in the case that hex_digit is 4'h0, 4'h1....
         case (hex_digit)
             4'h0: segments = 7'b100_0000;
             4'h1: segments = 7'b111_1001;
@@ -21,7 +23,7 @@ module hex_decoder(hex_digit, segments);
             4'hC: segments = 7'b100_0110;
             4'hD: segments = 7'b010_0001;
             4'hE: segments = 7'b000_0110;
-            4'hF: segments = 7'b000_1110;   
+            4'hF: segments = 7'b000_1110;
             default: segments = 7'h7f;
         endcase
 endmodule

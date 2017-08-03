@@ -6,6 +6,9 @@
 `include "vga_adapter/vga_controller.v"
 `include "vga_adapter/vga_pll.v"
 
+/* tumbler_vga module */
+/* this module contains everything that has to deal with
+drawing pixels on the VGA display*/
 module tumbler_vga(
     clock,      //  On Board 50 MHz
     // Your inputs and outputs here
@@ -43,7 +46,7 @@ module tumbler_vga(
     output    [9:0]    VGA_R;       //  VGA Red[9:0]
     output    [9:0]    VGA_G;       //  VGA Green[9:0]
     output    [9:0]    VGA_B;       //  VGA Blue[9:0]
-    
+
     /* Create the colour, x, y and
      * writeEn wires that are inputs to the controller. */
     wire [2:0] colour2;
@@ -172,16 +175,20 @@ module control(clock, go, in_x, in_y, in_c, full, reset, x, y, c, print);
             end
         end
     end
+    // gets rid of "extra pixels"
     always @(*) begin
+        // draws black over the x and y coordinates
         if (r == 1'b1) begin
             x <= black[15:8];
             y <= black[7:0];
         end
         else begin
+          // shifts the extra pixels in column
             if (clcol == 1'b1) begin
                 x <= in_x+col[1:0];
                 y <= col[9:3] + 30;
             end
+            // shifted x,y values to match background offset
             else begin
                 x <= in_x+offset[3:2];
                 y <= in_y+offset[1:0];

@@ -1,6 +1,9 @@
 // `timescale time_unit/time_precision
 `timescale 1ns / 1ns
 
+/* PS2 keyboard module*/
+/* did not end up using this module in our game,
+reason due to unable to get PS/2 pin assignments working */
 module ps2_keyboard(
     ps2_clock,
     ps2_data,
