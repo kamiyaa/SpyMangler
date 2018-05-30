@@ -5,7 +5,7 @@ Team Name: Aloha Snackbar
 
 Project Name: SpyMangler, a derivative of the infamous CodeMangler
 
-Dear Future B58 students, we received 3.0% on this project
+Dear Future B58 students, we received 80%~ on this project
 # ----------Instructions--------------
 
 Instructions are posted in the "logs" folder under b58_project_final.txt
